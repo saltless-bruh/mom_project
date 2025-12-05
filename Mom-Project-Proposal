@@ -1,0 +1,463 @@
+# Mom's Accounting Automation Project - Technical Proposal
+
+## Executive Summary
+
+This proposal outlines a technical solution to automate your mom's most time-consuming accounting task: manually entering invoice data into ACSoft accounting software. By combining AI-powered document extraction with desktop automation, we can reduce her daily data entry time by approximately 80-90%, allowing her to focus on higher-value accounting work and family responsibilities.
+
+**Project Duration:** 2-4 weeks (MVP phase)  
+**Technology Stack:** Python, Gemini API, PyWinAuto, FastAPI/Flask  
+**Target Savings:** 3-5 hours per day of manual data entry work
+
+---
+
+## Problem Statement
+
+Your mom currently spends 4-6 hours daily on accounting work, with the most time-consuming task being the manual entry of purchasing invoice data into ACSoft. The current workflow is:
+
+1. Collect PDF invoices from vendors
+2. Manually read each invoice
+3. Type/copy-paste line items, prices, discounts, taxes into ACSoft
+4. Verify and save entries
+
+This manual process is repetitive, error-prone, and physically tiring, reducing time available for family care and personal well-being.
+
+---
+
+## Proposed Solution Architecture
+
+The automation solution consists of four integrated layers:
+
+### 1. PDF Processing Layer
+
+**Purpose:** Extract structured data from vendor invoices  
+**Components:**
+
+- **Gemini Vision API** (Primary): Handles OCR and intelligent extraction for all invoice types
+- **invoice2data** (Optional): Lightweight fallback for invoices with fixed layouts (if needed for cost optimization)
+- **Python PDF Handler**: Manages file uploads and image conversion
+
+**Why Gemini 1.5:**
+
+- Supports up to 1 million tokens of context (handles multi-page invoices)
+- Superior Vietnamese text recognition
+- No need for complex regex templates
+- Cost-effective for home use (~$1-3/day estimated for typical invoice volume)
+
+**Output:** Structured JSON with extracted fields (vendor, date, items, amounts, taxes, discounts)
+
+### 2. Data Validation & Mapping Layer
+
+**Purpose:** Ensure extracted data matches ACSoft requirements  
+**Components:**
+
+- **Gemini Data Validator**: Normalizes dates, currency formats, item descriptions
+- **Mapping Engine**: Translates vendor invoice fields to ACSoft accounting categories
+- **Error Handler**: Flags ambiguous or missing data for manual review
+
+**Key Functions:**
+
+- Validate invoice structure and completeness
+- Map item categories to your family business's chart of accounts
+- Normalize currency decimals and tax rates
+- Detect duplicate invoice submissions
+- Generate human-readable validation report
+
+**Output:** Validated, formatted data ready for ACSoft input + validation report showing confidence levels
+
+### 3. GUI Automation Layer
+
+**Purpose:** Control ACSoft UI to input validated data  
+**Components:**
+
+- **PyWinAuto** (Primary): Native Windows automation for ACSoft controls
+- **PyAutoGUI** (Fallback): Screen coordinate-based automation if PyWinAuto cannot access certain elements
+- **Computer Vision**: Optional image-based element detection for robustness
+
+**Automation Steps:**
+
+1. Open ACSoft and navigate to data entry screen
+2. For each invoice line item:
+   - Click on item field
+   - Type item description
+   - Enter quantity and unit price
+   - Apply discount (if any)
+   - Apply tax calculation
+3. Stop before final save (allow mom to review)
+
+**Safety Features:**
+
+- Screenshot before each action (audit trail)
+- Validate each keystroke echoes correctly
+- Automatic pause on unexpected UI changes
+- No automatic save—manual confirmation required
+
+**Output:** ACSoft form fields populated and waiting for mom's final review/save
+
+### 4. Orchestration Layer
+
+**Purpose:** Coordinate all components and provide user interface  
+**Components:**
+
+- **Python Backend** (FastAPI or Flask): REST API coordinating all services
+- **Local Web UI** (HTML/Vue.js or React): Simple dashboard for upload and monitoring
+- **Logging & Audit System**: Records all operations locally for debugging
+
+**User Workflow:**
+
+1. Mom uploads PDF invoice(s) via web interface
+2. System extracts data using Gemini
+3. Shows validation report with extracted data
+4. Mom reviews and confirms extracted data
+5. System logs into ACSoft and fills form fields
+6. Mom reviews ACSoft form and manually saves
+7. System logs completion and stores invoice record
+
+**Output:** Clean audit trail, completed invoice record, local database of all processed invoices
+
+---
+
+## Technology Stack Justification
+
+| Component | Choice | Reason |
+|-----------|--------|--------|
+| **AI Model** | Google Gemini 2.0 Flash | Superior multimodal capabilities, Vietnamese support, cost-effective |
+| **Document Extraction** | invoice2data + Gemini | Gemini handles 95% of cases; invoice2data available as optional optimization |
+| **Desktop Automation** | PyWinAuto | Native Windows support for ACSoft, more reliable than coordinate-based approaches |
+| **Backend** | FastAPI or Flask | Lightweight, easy to debug locally, minimal dependencies |
+| **Frontend** | HTML + Vue.js or simple HTML forms | Fast to develop, runs locally without complex build process |
+| **Database** | SQLite (local) | Zero-overhead local storage, no external dependencies, perfect for family use |
+| **Deployment** | Local Python scripts + system task scheduler | Runs on mom's computer, no cloud dependency, full data privacy |
+
+---
+
+## Implementation Roadmap
+
+### Phase 1: MVP (Weeks 1-2)
+
+**Goal:** Prove concept with one supplier's invoice type
+
+**Tasks:**
+
+- Set up Gemini API integration and authentication
+- Build PDF upload and processing pipeline
+- Extract data from 5 sample invoices from primary supplier
+- Build data validation layer
+- Manually test ACSoft automation (PyWinAuto script for one invoice)
+- Create simple web interface for upload
+
+**Deliverable:** Working end-to-end demo with one invoice type
+
+### Phase 2: Enhancement (Week 3)
+
+**Goal:** Support multiple invoice formats and improve robustness
+
+**Tasks:**
+
+- Collect invoices from all regular suppliers
+- Train Gemini extractor on diverse formats
+- Expand mapping rules for all item categories
+- Add comprehensive error handling
+- Build audit logging system
+- Create monitoring dashboard
+
+**Deliverable:** Production-ready system for all current suppliers
+
+### Phase 3: Polish & Documentation (Week 4)
+
+**Goal:** Make system maintainable and user-friendly
+
+**Tasks:**
+
+- Performance optimization
+- Create user manual for mom
+- Document troubleshooting procedures
+- Set up automated daily backups
+- Create admin interface for updating supplier mappings
+- Load testing with high-volume invoice batches
+
+**Deliverable:** Fully documented, ready for daily use
+
+---
+
+## Cost Analysis
+
+### Development Costs
+
+| Item | Estimate | Notes |
+|------|----------|-------|
+| Development Time | 40-60 hours | Family project (internal labor) |
+| Tools & Software | $0 | All open-source or free tier |
+| **Total Development** | **$0** | Using available resources |
+
+### Operational Costs (Monthly)
+
+| Item | Estimate | Notes |
+|------|----------|-------|
+| Gemini API | $3-5 | ~100 invoices/month at $0.03-0.05 per invoice |
+| PyWinAuto/PyAutoGUI | $0 | Free open-source |
+| Server Hosting | $0 | Local machine |
+| **Total Monthly** | **$3-5** | Very cost-effective |
+
+### ROI Analysis
+
+**Time Saved:**
+
+- Current: 4-6 hours/day on accounting work
+- Post-automation: 0.5-1 hour/day (mostly mom's final review)
+- Daily savings: 3-5 hours
+
+**Monthly Impact:**
+
+- Hours saved: 60-100 hours/month
+- At mom's opportunity cost (~$10/hour for business time): $600-1,000/month saved
+- Monthly cost: $3-5
+- Net monthly benefit: **$595-997**
+- Payback period: **Same day deployment**
+
+---
+
+## Risk Analysis & Mitigation
+
+| Risk | Severity | Mitigation |
+|------|----------|-----------|
+| ACSoft UI changes after updates | Medium | Keep detailed element locators; add screenshot-based backup detection |
+| Gemini API downtime | Low | Cache extracted data locally; allow manual fallback data entry |
+| Invoice format variation | Medium | Collect diverse samples upfront; add user feedback loop to improve extraction |
+| Accidental data loss | High | Daily local backups; version control of all invoices processed |
+| PyWinAuto element detection failure | Low | Implement PyAutoGUI fallback with image recognition |
+| Mom's concerns about automation | High | Clear "Review before save" screen; detailed audit logs; gradual rollout |
+
+---
+
+## Success Criteria
+
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| Invoice extraction accuracy | 95%+ | Manual comparison of Gemini output vs. manual entry |
+| ACSoft data entry success | 98%+ | Successful form fills without manual correction |
+| System uptime | 99%+ | Days operational / total days attempted |
+| Mom's satisfaction | High | Reduced daily workload + ease of use feedback |
+| Time savings | 80%+ | Comparison of hours spent before/after |
+| Error rate | <1% | Mismatch between extracted data and what mom entered |
+
+---
+
+## Data Privacy & Security
+
+**Data Handling:**
+
+- All invoice PDFs stored locally on mom's computer
+- Gemini API calls made only to Google cloud (standard data privacy terms apply)
+- Extracted data cached locally in SQLite database
+- No data uploaded to external servers except Gemini API (Google's privacy policy)
+- Daily encrypted backups stored on local drives
+
+**Compliance:**
+
+- Audit logs kept for 1 year for business record-keeping
+- All vendor PDFs archived for tax/audit purposes
+- No third-party access to financial data
+
+---
+
+## Technical Implementation Notes
+
+### Required Libraries
+
+```bash
+Python 3.9+
+google-generativeai (Gemini API)
+pywinauto (Windows automation)
+pyautogui (backup automation)
+fastapi (backend framework)
+pydantic (data validation)
+sqlalchemy (database ORM)
+invoice2data (optional OCR)
+```
+
+### Environment Setup
+
+- Install Python 3.9+ on mom's Windows computer
+- Create Gemini API key (free tier available)
+- Set up local virtual environment for dependencies
+- Configure automatic startup via Task Scheduler
+
+### Testing Strategy
+
+1. **Unit Testing:** Test each extraction module independently
+2. **Integration Testing:** Test full pipeline with diverse invoices
+3. **UAT (User Acceptance Testing):** Mom reviews output for 1 week before full deployment
+4. **Regression Testing:** Verify system handles edge cases (missing fields, unusual formats)
+
+---
+
+## Future Enhancements (Post-MVP)
+
+1. **Multi-language OCR:** Support invoices in multiple languages
+2. **Email Auto-Import:** Automatically fetch invoices from supplier email accounts
+3. **Expense Categorization:** AI-based automatic account mapping (currently manual)
+4. **Financial Reports:** Generate monthly expense summaries
+5. **Mobile Interface:** Simple mobile app for invoice upload on-the-go
+6. **Cloud Backup:** Optional encrypted cloud backup of processed invoices
+7. **Machine Learning:** Learn vendor patterns and improve extraction over time
+
+---
+
+## Project Timeline & Deliverables
+
+| Week | Phase | Key Deliverables | Status |
+|------|-------|------------------|--------|
+| 1-2 | MVP | Working demo with 1 invoice type | Not Started |
+| 3 | Enhancement | Multi-supplier support | Not Started |
+| 4 | Polish | Production-ready system | Not Started |
+| Post-Launch | Maintenance | Bug fixes, improvements | Not Started |
+
+---
+
+## Required Resources
+
+**Hardware:**
+
+- Mom's Windows computer (existing, no new hardware needed)
+- Reliable internet connection (for Gemini API calls)
+
+**Personnel:**
+
+- 1 Developer (you): 40-60 hours over 4 weeks
+- 1 Business Owner (mom): 5-10 hours for UAT and feedback
+
+**External Services:**
+
+- Gemini API (free tier or paid tier: ~$3-5/month estimated)
+
+---
+
+## Approval & Sign-Off
+
+| Role | Name | Date | Signature |
+|------|------|------|-----------|
+| Project Sponsor | Mom | — | — |
+| Technical Lead | You | — | — |
+| Stakeholder | Dad | — | — |
+
+---
+
+## Appendix: Detailed Technical Specifications
+
+### A. Gemini API Integration
+
+**API Endpoint:** `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`
+
+**Input Format:**
+
+```json
+{
+  "contents": [{
+    "parts": [
+      {"text": "Extract invoice data as JSON: vendor_name, invoice_date, items[], total_amount, tax, discount"},
+      {"inline_data": {"mime_type": "image/jpeg", "data": "base64_encoded_image"}}
+    ]
+  }],
+  "generation_config": {"response_mime_type": "application/json"}
+}
+```
+
+**Output Format:**
+
+```json
+{
+  "vendor_name": "ABC Supplier",
+  "invoice_number": "INV-2025-001",
+  "invoice_date": "2025-12-05",
+  "items": [
+    {
+      "description": "Product A",
+      "quantity": 10,
+      "unit": "box",
+      "unit_price": 50000,
+      "discount_percent": 5,
+      "tax_percent": 10,
+      "total": 535000
+    }
+  ],
+  "total_amount": 1070000,
+  "currency": "VND"
+}
+```
+
+### B. PyWinAuto Sample Script
+
+```python
+from pywinauto.application import Application
+
+# Connect to ACSoft
+app = Application().connect(title_re=".*ACSoft.*")
+dlg = app.window(title_re=".*ACSoft.*")
+
+# Navigate to data entry screen
+dlg['MenuItemName'].click()
+dlg['SubMenuItemName'].click()
+
+# Fill form fields
+dlg['ItemDescription'].type_keys('Product Description')
+dlg['Quantity'].type_keys('10')
+dlg['UnitPrice'].type_keys('50000')
+
+# Wait for user confirmation before saving
+dlg['ConfirmButton'].click()
+```
+
+### C. Database Schema (SQLite)
+
+```sql
+CREATE TABLE invoices (
+  id INTEGER PRIMARY KEY,
+  vendor_id INTEGER,
+  invoice_number TEXT,
+  invoice_date DATE,
+  processed_date TIMESTAMP,
+  gemini_confidence FLOAT,
+  total_amount NUMERIC,
+  status TEXT, -- 'pending', 'approved', 'entered', 'saved'
+  pdf_path TEXT,
+  extracted_json TEXT,
+  notes TEXT
+);
+
+CREATE TABLE invoice_items (
+  id INTEGER PRIMARY KEY,
+  invoice_id INTEGER,
+  item_description TEXT,
+  quantity NUMERIC,
+  unit TEXT,
+  unit_price NUMERIC,
+  discount_percent NUMERIC,
+  tax_percent NUMERIC,
+  total_amount NUMERIC,
+  FOREIGN KEY(invoice_id) REFERENCES invoices(id)
+);
+
+CREATE TABLE audit_log (
+  id INTEGER PRIMARY KEY,
+  timestamp TIMESTAMP,
+  action TEXT,
+  details TEXT,
+  status TEXT
+);
+```
+
+---
+
+## Conclusion
+
+This accounting automation solution is **technically feasible, cost-effective, and designed specifically for your family's ACSoft environment**. By leveraging Gemini's advanced document understanding and PyWinAuto's Windows automation capabilities, we can dramatically reduce your mom's daily workload while maintaining data accuracy and security.
+
+The phased implementation approach (MVP → Enhancement → Polish) allows for validation at each stage and ensures the system meets real-world requirements before full deployment.
+
+**Recommendation:** Proceed with Phase 1 (MVP) development, starting with the most common invoice format from your largest supplier. This minimizes initial risk while demonstrating clear value within 2 weeks.
+
+---
+
+**Prepared by:** Senior Software Developer  
+**Date:** December 5, 2025  
+**Version:** 1.0 - Initial Technical Proposal

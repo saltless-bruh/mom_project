@@ -81,6 +81,92 @@
 
 ---
 
+### [] Task-1.5. Desktop Application Packaging (Phase 1 - CRITICAL)
+
+**Requirements:** REQ-NFR007 (P0), REQ-NFR019 (P0)  
+**Priority:** P0 (CRITICAL - Mom cannot use system without this)  
+**Estimated Time:** 2-3 days
+
+**Critical Requirement:** Mom cannot use terminal. System must be ONE-CLICK LAUNCH.
+
+[] 1.5.1. Create launcher script
+
+- [] - Create `start_maas.vbs` launcher script
+- [] - Implement backend auto-start in hidden window
+- [] - Add health check polling (wait for localhost:8765/health)
+- [] - Open browser in --app mode (fullscreen, no URL bar)
+- [] - Handle "already running" case (check port 8765)
+- [] - Add error handling with user-friendly messages
+- [] - Test launcher on clean Windows system
+
+[] 1.5.2. Create shutdown script
+
+- [] - Create `stop_maas.vbs` for clean shutdown
+- [] - Implement graceful backend termination
+- [] - Close browser windows automatically
+- [] - Clean up PID files
+- [] - Test shutdown doesn't leave processes
+
+[] 1.5.3. Hide console window in backend
+
+- [] - Modify `run.py` to hide console on Windows
+- [] - Use `ctypes` to hide console window
+- [] - Ensure no terminal window appears
+- [] - Test backend starts completely hidden
+- [] - Verify logs still work
+
+[] 1.5.4. Create installer script
+
+- [] - Create `install.bat` batch installer
+- [] - Copy files to C:\MAAS\ directory
+- [] - Create desktop shortcut programmatically (PowerShell)
+- [] - Optionally add to Windows startup folder
+- [] - Display success message with instructions
+- [] - Create README.txt with user instructions
+- [] - Test installer on clean Windows VM
+
+[] 1.5.5. Embed Python runtime
+
+- [] - Download Python 3.9 embeddable package (Windows x64)
+- [] - Extract to `python/` directory
+- [] - Configure `python39._pth` file for imports
+- [] - Install pip in embedded Python
+- [] - Install all requirements.txt dependencies
+- [] - Test embedded Python runs standalone
+- [] - Verify no system Python needed
+
+[] 1.5.6. Create system tray integration (OPTIONAL for Phase 1)
+
+- [] - Add `pystray` to requirements.txt
+- [] - Implement system tray icon in run.py
+- [] - Add "Open MAAS" menu item
+- [] - Add "Exit" menu item  
+- [] - Show green dot icon when running
+- [] - Show red dot icon on error
+- [] - Test tray icon appears and works
+
+[] 1.5.7. Test deployment with non-technical user
+
+- [] - Test on clean Windows 10/11 VM (no Python installed)
+- [] - Verify installer runs without errors
+- [] - Verify double-click desktop icon launches app
+- [] - Verify backend starts invisibly (no terminal)
+- [] - Verify browser opens in app mode (no URL bar)
+- [] - **CRITICAL:** Test with mom or non-technical family member
+- [] - Document any issues encountered
+- [] - Fix all usability problems
+
+[] 1.5.8. Create uninstaller
+
+- [] - Create `uninstall.bat` script
+- [] - Remove C:\MAAS\ directory
+- [] - Remove desktop shortcut
+- [] - Remove startup entry (if added)
+- [] - Prompt to keep data directory
+- [] - Test complete removal
+
+---
+
 ### [] Task-2. Database Implementation
 
 **Requirements:** TECHNICAL_SPECS.md Section 2.5, Requirements.md REQ-F016
@@ -450,11 +536,116 @@
 
 ---
 
-### [] Task-9. Comprehensive Testing
+### [] Task-9. Electron Desktop Application (Phase 2-3)
+
+**Requirements:** REQ-NFR007 (P0), REQ-NFR019 (P0)  
+**Priority:** P2 (Enhancement - after MVP Phase 1 working)  
+**Estimated Time:** 1 week  
+**Depends On:** Task-1.5 (PWA packaging must work first)
+
+**Goal:** Upgrade from PWA to native Electron desktop application for better UX.
+
+[] 9.1. Set up Electron project
+
+- [] - Install Node.js and npm
+- [] - Initialize Electron project with `npm init -y`
+- [] - Install Electron: `npm install --save-dev electron`
+- [] - Install electron-builder for packaging
+- [] - Create `package.json` with proper scripts
+- [] - Set up TypeScript (optional but recommended)
+- [] - Test basic Electron window opens
+
+[] 9.2. Embed Python backend in Electron
+
+- [] - Copy Python embedded runtime to Electron resources
+- [] - Copy application files to resources directory
+- [] - Modify `main.js` to spawn Python backend on app start
+- [] - Implement health check polling (/health endpoint)
+- [] - Wait for backend ready before opening window
+- [] - Handle backend startup failures gracefully
+- [] - Test backend starts correctly from Electron
+
+[] 9.3. Create Electron main process
+
+- [] - Implement `main.js` main process script
+- [] - Handle backend lifecycle (start/stop)
+- [] - Create application window when backend ready
+- [] - Configure window options (size, frame, etc.)
+- [] - Hide window URL bar (native browser)
+- [] - Handle app quit events cleanly
+- [] - Kill backend process on quit
+- [] - Test process management
+
+[] 9.4. Implement Electron renderer process
+
+- [] - Load Vue.js frontend from localhost:8765
+- [] - Add Electron-specific APIs (if needed)
+- [] - Implement IPC communication (if needed)
+- [] - Add "Minimize to tray" functionality
+- [] - Add "Check for updates" menu item
+- [] - Test frontend loads correctly
+- [] - Test IPC communication works
+
+[] 9.5. Build Windows installer
+
+- [] - Configure electron-builder for Windows
+- [] - Set up NSIS installer configuration
+- [] - Add application icon (.ico file)
+- [] - Configure installer options (per-user/all-users)
+- [] - Build installer: `npm run build:win`
+- [] - Test installer on clean Windows 10/11 VM
+- [] - Verify desktop shortcut created
+- [] - Verify Start Menu entry created
+
+[] 9.6. Add auto-update functionality
+
+- [] - Set up update server (GitHub Releases or simple S3)
+- [] - Integrate `electron-updater` package
+- [] - Implement update check on app start
+- [] - Show "Update available" notification
+- [] - Download and install updates silently
+- [] - Test update flow end-to-end
+- [] - Document update deployment process
+
+[] 9.7. Add system tray integration
+
+- [] - Implement system tray icon
+- [] - Add tray menu: Open MAAS, Check for updates, Exit
+- [] - Show green icon when running normally
+- [] - Show red icon on backend error
+- [] - Show notification on tray click
+- [] - Minimize to tray instead of quit
+- [] - Test tray functionality
+
+[] 9.8. Polish Electron application
+
+- [] - Add application icon (Windows .ico)
+- [] - Configure About dialog with version info
+- [] - Add keyboard shortcuts (Ctrl+Q for quit, etc.)
+- [] - Implement proper logging for Electron main process
+- [] - Handle Windows firewall prompts (document)
+- [] - Test on multiple Windows versions (10/11)
+- [] - Optimize startup time
+- [] - Create installation guide for users
+
+[] 9.9. Test Electron deployment with mom
+
+- [] - Install on mom's computer
+- [] - Verify launches from desktop shortcut
+- [] - Verify no terminal/console appears
+- [] - Verify system tray integration works
+- [] - Verify auto-update checks work
+- [] - **CRITICAL:** Get mom's feedback on usability
+- [] - Fix all issues identified by mom
+- [] - Document remaining limitations
+
+---
+
+### [] Task-10. Comprehensive Testing
 
 **Requirements:** CONTRIBUTING.md Testing section, Requirements.md Section 8.1
 
-[] 9.1. Write unit tests
+[] 10.1. Write unit tests
 
 - [] - Test PDF processor functions
 - [] - Test validator functions
@@ -463,7 +654,7 @@
 - [] - Test API endpoint logic
 - [] - Achieve 80%+ unit test coverage
 
-[] 9.2. Write integration tests
+[] 10.2. Write integration tests
 
 - [] - Test upload → extraction workflow
 - [] - Test extraction → validation workflow
@@ -471,7 +662,7 @@
 - [] - Test API endpoints with database
 - [] - Test error scenarios
 
-[] 9.3. Conduct end-to-end testing
+[] 10.3. Conduct end-to-end testing
 
 - [] - Test complete workflow with 10 sample invoices
 - [] - Test with primary supplier's invoices
@@ -488,7 +679,7 @@
 
 ---
 
-### [] Task-10. Documentation & README
+### [] Task-11. Documentation & README
 
 **Requirements:** AI_AGENT_INSTRUCTIONS.md, README.md
 
@@ -519,7 +710,7 @@
 
 **Objective:** Support multiple invoice formats and improve robustness
 
-### [] Task-11. Multi-Format Support
+### [] Task-12. Multi-Format Support
 
 **Requirements:** AI_AGENT_INSTRUCTIONS.md Phase 2, Requirements.md Section 8.2
 
@@ -552,7 +743,7 @@
 
 ---
 
-### [] Task-12. Enhanced Validation
+### [] Task-13. Enhanced Validation
 
 **Requirements:** Requirements.md REQ-F006
 
@@ -577,7 +768,7 @@
 
 ---
 
-### [] Task-13. Automation Integration
+### [] Task-14. Automation Integration
 
 **Requirements:** Requirements.md REQ-F013
 
@@ -602,7 +793,7 @@
 
 ---
 
-### [] Task-14. Monitoring Dashboard
+### [] Task-15. Monitoring Dashboard
 
 **Requirements:** Requirements.md REQ-UI003, REQ-UI004
 
@@ -627,7 +818,7 @@
 
 ---
 
-### [] Task-15. Integration Testing (Phase 2)
+### [] Task-16. Integration Testing (Phase 2)
 
 **Requirements:** AI_AGENT_INSTRUCTIONS.md Phase 2 Success Criteria
 
@@ -650,7 +841,7 @@
 
 **Objective:** Production-ready system with documentation
 
-### [] Task-16. Optimization
+### [] Task-17. Optimization
 
 **Requirements:** Requirements.md REQ-NFR001
 
@@ -680,7 +871,7 @@
 
 ---
 
-### [] Task-17. Automated Backups
+### [] Task-18. Automated Backups
 
 **Requirements:** Requirements.md REQ-F018
 
@@ -709,7 +900,7 @@
 
 ---
 
-### [] Task-18. Configuration Management
+### [] Task-19. Configuration Management
 
 **Requirements:** TECHNICAL_SPECS.md Section 3
 
@@ -734,7 +925,7 @@
 
 ---
 
-### [] Task-19. User Documentation
+### [] Task-20. User Documentation
 
 **Requirements:** AI_AGENT_INSTRUCTIONS.md Phase 3, Requirements.md REQ-NFR013
 

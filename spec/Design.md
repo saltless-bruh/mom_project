@@ -218,9 +218,327 @@ ConfidenceScorer → Validated Output
 
 ---
 
-## 4. Error Handling Design
+## 4. Deployment Architecture
 
-### 4.1 Error Categories
+### 4.1 Deployment Strategy Overview
+
+**Critical Requirement:** Mom cannot use terminal commands or run Python scripts manually.
+
+**Two-Phase Approach:**
+
+**Phase 1 (MVP - Weeks 1-2):** Progressive Web App (PWA) with VBScript launcher
+- ✅ Faster to implement (2-3 days)
+- ✅ Proves concept with minimal overhead
+- ✅ One-click desktop icon launch
+- ❌ Still uses browser (Chrome required)
+
+**Phase 2-3 (Enhancement - Weeks 3-4):** Electron desktop application
+- ✅ Native desktop application
+- ✅ Professional UX (no browser chrome)
+- ✅ Auto-update support
+- ✅ System tray integration
+
+### 4.2 Phase 1: PWA Architecture
+
+**Component Flow:**
+```
+Desktop Icon → start_maas.vbs → Python Backend (hidden) → Chrome --app mode
+                                      ↓
+                                localhost:8765
+                                      ↓
+                                Vue.js Frontend
+```
+
+**Key Components:**
+
+1. **`start_maas.vbs`** - VBScript launcher (double-click to start)
+   - Starts Python backend invisibly (no console window)
+   - Polls `/health` endpoint until backend ready
+   - Opens Chrome in --app mode (fullscreen, no URL bar)
+   - Handles "already running" case gracefully
+
+2. **`run.py`** - Modified to hide console window
+   - Uses `ctypes` on Windows to hide console
+   - Starts FastAPI server on localhost:8765
+   - Logs to file only (no stdout to console)
+
+3. **`stop_maas.vbs`** - Clean shutdown script
+   - Terminates Python backend process
+   - Closes Chrome windows
+   - Clean exit
+
+4. **Embedded Python Runtime**
+   - Self-contained Python 3.9 installation
+   - No system Python required
+   - All dependencies pre-installed
+
+**File Structure:**
+```
+C:\MAAS\
+├── python\                 # Embedded Python runtime
+│   ├── python.exe
+│   ├── python39.dll
+│   └── Lib\site-packages\
+├── app\                    # Application code
+├── frontend\               # Vue.js frontend
+├── data\                   # User data
+├── logs\                   # Application logs
+├── start_maas.vbs          # Launcher (double-click this)
+├── stop_maas.vbs           # Shutdown script
+└── README.txt              # User instructions
+```
+
+**Example: start_maas.vbs (simplified)**
+```vbscript
+' Start backend invisibly
+Set objShell = CreateObject("WScript.Shell")
+pythonExe = "C:\MAAS\python\python.exe"
+backendScript = "C:\MAAS\run.py"
+objShell.Run """" & pythonExe & """ """ & backendScript & """", 0, False
+
+' Wait for backend ready (health check polling)
+maxRetries = 30
+Do While retryCount < maxRetries
+    WScript.Sleep 1000
+    ' Check http://localhost:8765/health
+    ' If status 200, break
+Loop
+
+' Open browser in app mode
+chromeExe = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+objShell.Run """" & chromeExe & """ --app=http://localhost:8765", 1, False
+```
+
+**Example: run.py (console hiding)**
+```python
+import sys
+
+# Hide console window on Windows
+if sys.platform == "win32":
+    import ctypes
+    kernel32 = ctypes.WinDLL("kernel32")
+    hwnd = kernel32.GetConsoleWindow()
+    if hwnd:
+        user32 = ctypes.WinDLL("user32")
+        user32.ShowWindow(hwnd, 0)  # SW_HIDE
+
+# Start FastAPI server
+import uvicorn
+from app.main import app
+
+uvicorn.run(app, host="127.0.0.1", port=8765, log_level="info")
+```
+
+**Installation Process:**
+1. Extract package to C:\MAAS\
+2. Run `install.bat` (creates desktop shortcut, optionally adds to startup)
+3. Double-click "MAAS" desktop icon to launch
+
+### 4.3 Phase 2-3: Electron Architecture
+
+**Component Flow:**
+```
+MAAS.exe → Electron Main Process → Python Backend (embedded)
+                ↓
+          Electron Renderer → Vue.js Frontend
+```
+
+**Architecture:**
+
+**Main Process (Node.js):**
+- Spawns Python backend as child process
+- Waits for health check before opening window
+- Manages application lifecycle
+- Handles system tray integration
+- Manages auto-updates
+
+**Renderer Process:**
+- Loads Vue.js frontend from localhost:8765
+- IPC communication with main process (if needed)
+- Native window controls
+
+**Embedded Backend:**
+- Python runtime bundled with Electron
+- Starts automatically when app launches
+- Terminates when app quits
+
+**Example: Electron main.js (simplified)**
+```javascript
+const { app, BrowserWindow } = require('electron');
+const { spawn } = require('child_process');
+const path = require('path');
+const axios = require('axios');
+
+let mainWindow;
+let backendProcess;
+
+async function startBackend() {
+  // Path to embedded Python
+  const pythonPath = path.join(process.resourcesPath, 'python', 'python.exe');
+  const scriptPath = path.join(process.resourcesPath, 'app', 'run.py');
+  
+  // Spawn Python backend
+  backendProcess = spawn(pythonPath, [scriptPath], {
+    windowsHide: true,
+    detached: false
+  });
+  
+  // Wait for backend ready
+  const maxRetries = 30;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await axios.get('http://localhost:8765/health');
+      if (response.status === 200) {
+        return true;
+      }
+    } catch (error) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+  return false;
+}
+
+async function createWindow() {
+  // Start backend first
+  const backendReady = await startBackend();
+  if (!backendReady) {
+    // Show error dialog
+    return;
+  }
+  
+  // Create browser window
+  mainWindow = new BrowserWindow({
+    width: 1280,
+    height: 800,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true
+    }
+  });
+  
+  // Load frontend
+  mainWindow.loadURL('http://localhost:8765');
+}
+
+app.whenReady().then(createWindow);
+
+app.on('quit', () => {
+  // Kill backend process
+  if (backendProcess) {
+    backendProcess.kill();
+  }
+});
+```
+
+**Installation Process:**
+1. Download MAAS-Setup.exe
+2. Run installer (NSIS or Squirrel)
+3. Desktop shortcut and Start Menu entry created automatically
+4. Double-click to launch
+
+**Advantages Over PWA:**
+- Native application (no browser chrome)
+- Professional UX
+- System tray integration
+- Auto-update support
+- Better process management
+
+### 4.4 Health Monitoring
+
+**Health Check Endpoint:**
+```python
+# app/api/routes/health.py
+from fastapi import APIRouter
+
+router = APIRouter()
+
+@router.get("/health")
+async def health_check():
+    """Backend health check for launcher scripts"""
+    return {
+        "status": "healthy",
+        "version": "1.0.0",
+        "timestamp": datetime.utcnow().isoformat()
+    }
+```
+
+**Health Check Strategy:**
+- Launcher scripts poll `/health` endpoint
+- 1 second intervals
+- 30 second timeout
+- HTTP 200 = backend ready
+- Any error = retry or fail
+
+### 4.5 Process Management
+
+**Startup Flow:**
+1. User double-clicks desktop icon
+2. Launcher checks if backend already running (port 8765)
+3. If running → just open browser/window
+4. If not running → start backend invisibly
+5. Poll health endpoint (max 30 seconds)
+6. When healthy → open UI
+7. If timeout → show error message with log location
+
+**Shutdown Flow:**
+1. User closes UI window
+2. Backend continues running (allows reopen)
+3. To fully stop: Run stop script or kill process
+4. Clean termination of all child processes
+
+**Error Handling:**
+- Port already in use → detect and notify user
+- Backend fails to start → show error with log path
+- Backend crashes → system tray notification (Phase 2-3)
+- Health check timeout → user-friendly error message
+
+### 4.6 Deployment Package Structure
+
+**Phase 1 (PWA):**
+```
+MAAS_v1.0.zip
+├── python/               # Embedded Python runtime (50-100 MB)
+├── app/                  # Application code
+├── frontend/             # Vue.js build
+├── data/                 # Empty directories (created on install)
+├── logs/
+├── config.yaml
+├── run.py
+├── start_maas.vbs
+├── stop_maas.vbs
+├── install.bat           # Windows installer script
+└── README.txt            # User instructions
+```
+
+**Phase 2-3 (Electron):**
+```
+MAAS-Setup.exe            # NSIS installer (100-150 MB)
+└── (Contains all files bundled inside installer)
+```
+
+**Installation Script (install.bat):**
+```batch
+@echo off
+REM Copy files to C:\MAAS\
+xcopy /E /I python C:\MAAS\python
+xcopy /E /I app C:\MAAS\app
+REM ... copy other files ...
+
+REM Create desktop shortcut
+powershell -Command "$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%USERPROFILE%\Desktop\MAAS.lnk'); $Shortcut.TargetPath = 'C:\MAAS\start_maas.vbs'; $Shortcut.Save()"
+
+REM Optional: Add to Windows startup
+REM Copy shortcut to %APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\
+
+echo Installation complete!
+pause
+```
+
+---
+
+## 5. Error Handling Design
+
+### 5.1 Error Categories
 
 | Category | Examples | Recovery Strategy |
 |----------|----------|-------------------|

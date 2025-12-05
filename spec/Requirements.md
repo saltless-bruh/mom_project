@@ -340,15 +340,60 @@ Reduce manual data entry time by 80-90% (from 4-6 hours to 0.5-1 hour per day) w
 
 ### 3.3 Usability Requirements
 
-**REQ-NFR007: Ease of Use**
+**REQ-NFR007: Ease of Use (DEPLOYMENT & UX)**
 
-- **Description:** System shall be easy for non-technical users
-- **Requirement:**
-  - Intuitive UI workflow
-  - Clear instructions
-  - Minimal training required
-  - Vietnamese language support in UI
-- **Priority:** P0 (Critical)
+- **Description:** System shall be operable by non-technical user without ANY command-line or technical knowledge
+- **Priority:** P0 (CRITICAL) - System unusable otherwise
+- **Category:** Usability & Deployment
+
+**CRITICAL REQUIREMENT:** Mom cannot use terminal/command line.
+
+**Mandatory User Experience:**
+
+1. One-click launch - Desktop icon double-click only
+2. No terminal exposure - User never sees command prompt
+3. No manual server starting - Backend auto-starts invisibly
+4. No URL typing - User never types "localhost"
+5. Visual feedback - All operations have clear status
+6. Graceful errors - No stack traces, only user-friendly messages
+7. System tray indicator - Shows running status
+
+**Acceptance Criteria - Phase 1 (PWA with Auto-Start):**
+
+- [ ] Double-click desktop shortcut launches system
+- [ ] Backend starts automatically in hidden window
+- [ ] Browser opens to application automatically
+- [ ] Application opens in fullscreen/app mode (no URL bar visible)
+- [ ] System tray icon shows running status (optional for Phase 1)
+- [ ] One-click shutdown from tray icon or window close
+- [ ] Auto-start on Windows login (optional user setting)
+- [ ] **Critical Test:** Non-technical user can operate without any help
+
+**Acceptance Criteria - Phase 2-3 (Electron Desktop App):**
+
+- [ ] Single .exe installer with setup wizard
+- [ ] Desktop shortcut created automatically during installation
+- [ ] App indistinguishable from native Windows application
+- [ ] No browser chrome or URL bar visible
+- [ ] System tray integration with status menu
+- [ ] Auto-update capability built-in
+- [ ] Standard Windows uninstaller in Add/Remove Programs
+- [ ] **Critical Test:** Mom can update app without help
+
+**PROHIBITED Behaviors (System MUST NEVER):**
+
+- ❌ Show terminal or command prompt to user
+- ❌ Require user to type "python run.py" or similar commands
+- ❌ Show "localhost:8000" or any URL in browser
+- ❌ Require manual starting/stopping of services
+- ❌ Require editing configuration files manually
+- ❌ Show Python tracebacks or technical error messages
+
+**Success Test:**
+
+- Mom's sister (also non-technical) can use system after 5-minute visual demo
+- No phone calls for help during first week of use
+- Mom uses system daily without technical issues
 
 **REQ-NFR008: User Feedback**
 
@@ -467,6 +512,46 @@ Reduce manual data entry time by 80-90% (from 4-6 hours to 0.5-1 hour per day) w
   - Vietnamese language
   - JSON for API responses
 - **Priority:** P0 (Critical)
+
+**REQ-NFR019: Installation & Deployment**
+
+- **Description:** System installation and deployment must be simple enough for family member to perform without technical knowledge
+- **Priority:** P0 (CRITICAL)
+- **Category:** Usability & Deployment
+
+**Installation Requirements:**
+
+1. **Single installer file**
+   - Phase 1: `MAAS-Install.bat` (batch file with embedded Python)
+   - Phase 2-3: `MAAS-Setup.exe` (full installer wizard)
+
+2. **One-click installation process**
+   - Double-click installer → Follow simple wizard
+   - Desktop shortcut created automatically
+   - No manual configuration required
+
+3. **Automatic dependency installation**
+   - Python runtime embedded (no separate install)
+   - All libraries included
+   - No pip commands needed
+
+4. **Clear success confirmation**
+   - "Installation Complete!" message
+   - Instructions: "Double-click MAAS icon to start"
+   - Option to launch immediately
+
+**Uninstallation Requirements:**
+
+- Standard Windows "Add/Remove Programs" entry
+- Complete file cleanup
+- Data preservation option
+
+**Acceptance Criteria:**
+
+- [ ] Family member can install without help
+- [ ] Installation completes in < 5 minutes
+- [ ] Works immediately after installation
+- [ ] **Critical Test:** Non-technical relative installs successfully
 
 ---
 

@@ -79,12 +79,44 @@
 - `ResponseParser`: Parses JSON responses
 - `ConfidenceScorer`: Evaluates extraction quality
 
-**Data Flow:**
+**Data Flow with Human Review:**
 
 ```bash
-PDF File → PDFConverter → Images → GeminiClient → 
-Raw JSON → ResponseParser → Structured Data → 
-ConfidenceScorer → Validated Output
+Step 1: Upload & Preview (NO AI YET)
+PDF File → PDFConverter → Images/Text Preview → 
+Display to Mom → Mom Reviews PDF Quality
+
+Step 2: Mom Initiates Extraction (AI STARTS HERE)
+Mom clicks "Extract Data" → GeminiClient API Call → 
+Raw JSON → ResponseParser → Structured Data
+
+Step 3: Human Review & Correction
+Structured Data → Display in Editable Form → 
+Mom Reviews/Edits Data → Mom Clicks "Submit"
+
+Step 4: Validation & Storage
+Submitted Data → Validator → ConfidenceScorer → 
+Database Storage → Ready for Automation
+```
+
+**Key Design Decision: AI Triggered by User Action**
+
+**Why AI starts AFTER mom clicks "Extract Data" (not on upload):**
+
+1. ✅ **Cost Control**: Gemini API costs $$ per call - only call when user confirms
+2. ✅ **Quality Check**: Mom can verify PDF quality before wasting API call
+3. ✅ **User Control**: Mom decides when to process (not automatic)
+4. ✅ **Error Prevention**: Bad scans detected before API call
+5. ✅ **Audit Trail**: Clear user intent logged
+
+**Workflow Timeline:**
+```
+0:00 - Mom uploads PDF → Preview shown instantly (NO API call)
+0:05 - Mom reviews PDF → "Looks good, extract this"
+0:06 - Mom clicks "Extract Data" → Gemini API called NOW
+0:08 - Extraction results shown → Mom reviews/edits
+0:10 - Mom clicks "Submit" → Data validated and stored
+0:11 - Ready for automation
 ```
 
 **Error Handling:**
@@ -93,6 +125,7 @@ ConfidenceScorer → Validated Output
 - Fallback to page-by-page processing for large files
 - Capture and log all API errors
 - Return partial results with warnings
+- Allow mom to retry or manual entry if extraction fails
 
 ### 2.2 Data Validation Service
 
@@ -139,7 +172,332 @@ ConfidenceScorer → Validated Output
 - Automatic pause on errors
 - **No auto-save capability**
 
-### 2.4 FastAPI Backend
+### 2.4 PDF Preview & Human Review Interface
+
+**Purpose:** Allow mom to verify PDF quality and review extracted data before processing
+
+**Design Pattern:** Two-Phase Preview Pattern
+
+#### Phase 1: PDF Quality Preview (Before AI Extraction)
+
+**Component: PDF Preview Service**
+
+```python
+class PDFPreviewService:
+    """Generate preview of uploaded PDF for quality check"""
+    
+    def generate_preview(self, pdf_path: str) -> PDFPreview:
+        """
+        Convert PDF to images and extract basic text for preview.
+        NO AI/Gemini call at this stage - just basic PDF rendering.
+        
+        Returns:
+            PDFPreview with images and raw text for display
+        """
+        pages = []
+        for page_num in range(pdf.page_count):
+            # Convert to image (thumbnail for preview)
+            image = pdf_page_to_image(page_num, dpi=150)
+            
+            # Extract basic text (PyMuPDF/pdfplumber - local, fast, free)
+            raw_text = extract_text_from_page(page_num)
+            
+            pages.append({
+                "page_number": page_num + 1,
+                "thumbnail": image_to_base64(image),
+                "raw_text": raw_text,
+                "size": (image.width, image.height)
+            })
+        
+        return PDFPreview(
+            filename=pdf_path,
+            page_count=len(pages),
+            pages=pages,
+            file_size=get_file_size(pdf_path)
+        )
+```
+
+**UI Flow:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ MAAS - Invoice Upload                                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  [Drag PDF here or Click to Upload]                        │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+
+After Upload (NO AI YET):
+
+┌─────────────────────────────────────────────────────────────┐
+│ MAAS - PDF Preview                      [X Close]           │
+├─────────────────────────────────────────────────────────────┤
+│ ┌─────────────────┐  ┌───────────────────────────────────┐ │
+│ │  PDF Thumbnail  │  │ Raw Text Preview (Basic OCR)      │ │
+│ │                 │  │                                   │ │
+│ │  [Page 1 image] │  │ Công ty TNHH ABC                  │ │
+│ │                 │  │ Địa chỉ: ...                      │ │
+│ │                 │  │ Mã số thuế: ...                   │ │
+│ │                 │  │                                   │ │
+│ │  Page 1 of 2    │  │ HÓA ĐƠN BÁN HÀNG                  │ │
+│ │  [< Prev] [Next>]│  │ Số: INV-001                       │ │
+│ │                 │  │ ...                               │ │
+│ └─────────────────┘  └───────────────────────────────────┘ │
+│                                                             │
+│ Quality Check:                                              │
+│ ✅ Text is readable                                         │
+│ ✅ Image is clear                                           │
+│ ✅ All pages present                                        │
+│                                                             │
+│ [❌ Cancel]  [✅ Extract Data with AI] ← AI starts HERE    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Key Points:**
+
+- ✅ **Instant preview** - Uses free local PDF libraries (PyMuPDF/pdfplumber)
+- ✅ **No cost** - No Gemini API call yet
+- ✅ **Quality check** - Mom can see if scan is readable
+- ✅ **Cancel if bad** - Mom can reject and rescan without wasting API call
+
+#### Phase 2: Structured Data Review (After AI Extraction)
+
+**Component: Markdown Comparison View**
+
+```python
+class ExtractionReviewService:
+    """Present extracted data in editable markdown format"""
+    
+    def format_extraction_as_markdown(self, invoice_data: dict) -> str:
+        """
+        Convert extracted JSON data to readable markdown format
+        that mom can edit before submission.
+        """
+        md = f"""
+# Invoice Data Review
+
+## 📄 Header Information
+- **Vendor Name**: {invoice_data['vendor_name']}
+- **Vendor Address**: {invoice_data.get('vendor_address', 'N/A')}
+- **Tax ID**: {invoice_data.get('tax_id', 'N/A')}
+- **Invoice Number**: {invoice_data['invoice_number']}
+- **Invoice Date**: {invoice_data['invoice_date']}
+- **Due Date**: {invoice_data.get('due_date', 'N/A')}
+
+## 🛒 Line Items
+| # | Description | Quantity | Unit Price | Amount |
+|---|-------------|----------|------------|--------|
+"""
+        for idx, item in enumerate(invoice_data.get('items', []), 1):
+            md += f"| {idx} | {item['description']} | {item['quantity']} | {item['unit_price']:,} | {item['total']:,} |\n"
+        
+        md += f"""
+## 💰 Totals
+- **Subtotal**: {invoice_data.get('subtotal', 0):,} VND
+- **Tax (10%)**: {invoice_data.get('tax_amount', 0):,} VND
+- **Discount**: {invoice_data.get('discount', 0):,} VND
+- **Total Amount**: {invoice_data['total_amount']:,} VND
+
+## ⚠️ Validation Warnings
+"""
+        for warning in invoice_data.get('validation_warnings', []):
+            md += f"- ⚠️ {warning}\n"
+        
+        md += f"""
+---
+**Confidence Score**: {invoice_data.get('confidence', 0):.1%}
+"""
+        return md
+```
+
+**UI Flow:**
+
+```
+After Mom clicks "Extract Data with AI":
+
+┌─────────────────────────────────────────────────────────────┐
+│ MAAS - Review Extracted Data           [X Close]           │
+├─────────────────────────────────────────────────────────────┤
+│ Split View: PDF ↔️ Extracted Data                           │
+├─────────────────────────────────────────────────────────────┤
+│ ┌─────────────────┐ │ ┌───────────────────────────────────┐│
+│ │  Original PDF   │ │ │ # Invoice Data Review  [📝 Edit]  ││
+│ │                 │ │ │                                   ││
+│ │  [Invoice Image]│ │ │ ## 📄 Header Information          ││
+│ │                 │ │ │ - **Vendor**: Công ty ABC         ││
+│ │                 │ │ │ - **Tax ID**: 0123456789 ⚠️       ││
+│ │                 │ │ │ - **Invoice #**: INV-001           ││
+│ │                 │ │ │ - **Date**: 2025-12-05            ││
+│ │  [Zoom] [Rotate]│ │ │                                   ││
+│ │                 │ │ │ ## 🛒 Line Items                  ││
+│ │                 │ │ │ | # | Item | Qty | Price | Total ││
+│ │                 │ │ │ | 1 | ... | 10 | 100k | 1.0M |   ││
+│ │                 │ │ │                                   ││
+│ │                 │ │ │ ## 💰 Totals                      ││
+│ │                 │ │ │ - **Total**: 1,000,000 VND        ││
+│ │                 │ │ │                                   ││
+│ │                 │ │ │ ⚠️ Tax ID format unusual           ││
+│ │                 │ │ │ ✅ All calculations correct        ││
+│ └─────────────────┘ │ └───────────────────────────────────┘│
+│                     │                                      │
+│ [⬅️ Back]  [📝 Edit Data]  [✅ Looks Good, Submit] ← Next  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Edit Mode (When Mom Clicks "Edit Data"):**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ MAAS - Edit Invoice Data               [X Close]           │
+├─────────────────────────────────────────────────────────────┤
+│ Editable Form View                                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│ Vendor Name: [Công ty ABC                    ]             │
+│ Tax ID:      [0123456789    ] ⚠️ Check format              │
+│ Invoice #:   [INV-001       ]                              │
+│ Date:        [2025-12-05    ] 📅                           │
+│                                                             │
+│ Line Items:                                [+ Add Row]      │
+│ ┌──┬──────────────┬─────┬──────────┬──────────────┬───┐    │
+│ │1 │ Description  │ 10  │ 100,000  │ 1,000,000    │ X │    │
+│ │2 │ Description  │ 5   │ 200,000  │ 1,000,000    │ X │    │
+│ └──┴──────────────┴─────┴──────────┴──────────────┴───┘    │
+│                                                             │
+│ Subtotal:  [2,000,000] (auto-calculated)                   │
+│ Tax (10%): [  200,000] (auto-calculated)                   │
+│ Discount:  [        0]                                     │
+│ Total:     [2,200,000] VND                                 │
+│                                                             │
+│ [❌ Cancel]  [👁️ Preview Changes]  [✅ Submit]              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Key Features:**
+
+- ✅ **Side-by-side comparison** - Original PDF vs Extracted data
+- ✅ **Markdown format** - Clean, readable, editable
+- ✅ **Inline editing** - Click "Edit" to modify any field
+- ✅ **Validation warnings** - Highlights potential errors
+- ✅ **Auto-calculation** - Recalculates totals as mom edits
+- ✅ **Diff highlighting** - Shows what mom changed
+
+#### Data Flow Implementation
+
+```python
+# Backend API endpoints
+@router.post("/api/invoices/upload")
+async def upload_invoice(file: UploadFile):
+    """
+    Step 1: Upload PDF and generate preview (NO AI)
+    Returns preview data immediately
+    """
+    pdf_path = save_uploaded_file(file)
+    preview = PDFPreviewService().generate_preview(pdf_path)
+    
+    # Store in temporary storage
+    temp_invoice = {
+        "id": generate_temp_id(),
+        "pdf_path": pdf_path,
+        "preview": preview,
+        "status": "UPLOADED",
+        "extracted_data": None  # No extraction yet
+    }
+    
+    return {
+        "invoice_id": temp_invoice["id"],
+        "preview": preview,
+        "next_action": "REVIEW_QUALITY"  # Mom reviews, then clicks "Extract"
+    }
+
+@router.post("/api/invoices/{invoice_id}/extract")
+async def extract_invoice_data(invoice_id: str):
+    """
+    Step 2: Extract data using Gemini API (AI STARTS HERE)
+    Called when mom clicks "Extract Data with AI"
+    """
+    invoice = get_temp_invoice(invoice_id)
+    
+    # Log API call for cost tracking
+    logger.info(f"Gemini API call initiated for invoice {invoice_id}")
+    
+    # Call Gemini API
+    extracted_data = await GeminiClient().extract_invoice(invoice.pdf_path)
+    
+    # Format as markdown for review
+    markdown_view = ExtractionReviewService().format_extraction_as_markdown(extracted_data)
+    
+    # Update temporary storage
+    invoice.extracted_data = extracted_data
+    invoice.markdown_view = markdown_view
+    invoice.status = "EXTRACTED"
+    
+    return {
+        "invoice_id": invoice_id,
+        "extracted_data": extracted_data,
+        "markdown_view": markdown_view,
+        "confidence": extracted_data.get("confidence", 0),
+        "validation_warnings": extracted_data.get("validation_warnings", []),
+        "next_action": "REVIEW_AND_EDIT"  # Mom reviews/edits, then submits
+    }
+
+@router.put("/api/invoices/{invoice_id}/data")
+async def update_invoice_data(invoice_id: str, data: dict):
+    """
+    Step 3: Update data after mom's edits
+    Called when mom edits fields
+    """
+    invoice = get_temp_invoice(invoice_id)
+    
+    # Track what changed
+    changes = detect_changes(invoice.extracted_data, data)
+    
+    # Log corrections for ML improvement
+    log_human_corrections(invoice_id, changes)
+    
+    # Re-validate
+    validation = validate_invoice_data(data)
+    
+    return {
+        "invoice_id": invoice_id,
+        "changes": changes,
+        "validation": validation,
+        "ready_to_submit": validation["is_valid"]
+    }
+
+@router.post("/api/invoices/{invoice_id}/submit")
+async def submit_invoice(invoice_id: str):
+    """
+    Step 4: Final submission - Save to database
+    Called when mom clicks "Looks Good, Submit"
+    """
+    invoice = get_temp_invoice(invoice_id)
+    
+    # Save to database
+    db_invoice = save_invoice_to_database(invoice.extracted_data)
+    
+    # Clean up temporary storage
+    delete_temp_invoice(invoice_id)
+    
+    return {
+        "invoice_id": db_invoice.id,
+        "status": "READY_FOR_AUTOMATION",
+        "next_action": "AUTOMATE_ACSOFT"
+    }
+```
+
+**Summary:**
+
+1. **Upload PDF** → Preview shown instantly (free, local)
+2. **Mom reviews preview** → Decides if quality is good
+3. **Mom clicks "Extract Data"** → Gemini API called (costs $$)
+4. **Extracted data shown** → Side-by-side with PDF in markdown format
+5. **Mom edits if needed** → Changes tracked and validated
+6. **Mom clicks "Submit"** → Data saved to database
+7. **Ready for automation** → Next step is ACSoft automation
+
+### 2.5 FastAPI Backend
 
 **Purpose:** Orchestrate workflow and expose REST API
 

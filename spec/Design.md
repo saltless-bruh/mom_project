@@ -110,6 +110,7 @@ Database Storage → Ready for Automation
 5. ✅ **Audit Trail**: Clear user intent logged
 
 **Workflow Timeline:**
+
 ```
 0:00 - Mom uploads PDF → Preview shown instantly (NO API call)
 0:05 - Mom reviews PDF → "Looks good, extract this"
@@ -166,11 +167,13 @@ Database Storage → Ready for Automation
 
 **Safety Mechanisms:**
 
+- **Global Kill Switch (F12):** Immediately terminates automation thread
 - Screenshot before every action
 - Element existence verification
 - Action confirmation checks
 - Automatic pause on errors
 - **No auto-save capability**
+- **Manual Resume:** Explicit user confirmation required to restart after stop
 
 ### 2.4 PDF Preview & Human Review Interface
 
@@ -585,12 +588,14 @@ async def submit_invoice(invoice_id: str):
 **Two-Phase Approach:**
 
 **Phase 1 (MVP - Weeks 1-2):** Progressive Web App (PWA) with VBScript launcher
+
 - ✅ Faster to implement (2-3 days)
 - ✅ Proves concept with minimal overhead
 - ✅ One-click desktop icon launch
 - ❌ Still uses browser (Chrome required)
 
 **Phase 2-3 (Enhancement - Weeks 3-4):** Electron desktop application
+
 - ✅ Native desktop application
 - ✅ Professional UX (no browser chrome)
 - ✅ Auto-update support
@@ -599,6 +604,7 @@ async def submit_invoice(invoice_id: str):
 ### 4.2 Phase 1: PWA Architecture
 
 **Component Flow:**
+
 ```
 Desktop Icon → start_maas.vbs → Python Backend (hidden) → Chrome --app mode
                                       ↓
@@ -631,6 +637,7 @@ Desktop Icon → start_maas.vbs → Python Backend (hidden) → Chrome --app mod
    - All dependencies pre-installed
 
 **File Structure:**
+
 ```
 C:\MAAS\
 ├── python\                 # Embedded Python runtime
@@ -647,6 +654,7 @@ C:\MAAS\
 ```
 
 **Example: start_maas.vbs (simplified)**
+
 ```vbscript
 ' Start backend invisibly
 Set objShell = CreateObject("WScript.Shell")
@@ -668,6 +676,7 @@ objShell.Run """" & chromeExe & """ --app=http://localhost:8765", 1, False
 ```
 
 **Example: run.py (console hiding)**
+
 ```python
 import sys
 
@@ -688,6 +697,7 @@ uvicorn.run(app, host="127.0.0.1", port=8765, log_level="info")
 ```
 
 **Installation Process:**
+
 1. Extract package to C:\MAAS\
 2. Run `install.bat` (creates desktop shortcut, optionally adds to startup)
 3. Double-click "MAAS" desktop icon to launch
@@ -695,6 +705,7 @@ uvicorn.run(app, host="127.0.0.1", port=8765, log_level="info")
 ### 4.3 Phase 2-3: Electron Architecture
 
 **Component Flow:**
+
 ```
 MAAS.exe → Electron Main Process → Python Backend (embedded)
                 ↓
@@ -704,6 +715,7 @@ MAAS.exe → Electron Main Process → Python Backend (embedded)
 **Architecture:**
 
 **Main Process (Node.js):**
+
 - Spawns Python backend as child process
 - Waits for health check before opening window
 - Manages application lifecycle
@@ -711,16 +723,19 @@ MAAS.exe → Electron Main Process → Python Backend (embedded)
 - Manages auto-updates
 
 **Renderer Process:**
+
 - Loads Vue.js frontend from localhost:8765
 - IPC communication with main process (if needed)
 - Native window controls
 
 **Embedded Backend:**
+
 - Python runtime bundled with Electron
 - Starts automatically when app launches
 - Terminates when app quits
 
 **Example: Electron main.js (simplified)**
+
 ```javascript
 const { app, BrowserWindow } = require('electron');
 const { spawn } = require('child_process');
@@ -789,12 +804,14 @@ app.on('quit', () => {
 ```
 
 **Installation Process:**
+
 1. Download MAAS-Setup.exe
 2. Run installer (NSIS or Squirrel)
 3. Desktop shortcut and Start Menu entry created automatically
 4. Double-click to launch
 
 **Advantages Over PWA:**
+
 - Native application (no browser chrome)
 - Professional UX
 - System tray integration
@@ -804,6 +821,7 @@ app.on('quit', () => {
 ### 4.4 Health Monitoring
 
 **Health Check Endpoint:**
+
 ```python
 # app/api/routes/health.py
 from fastapi import APIRouter
@@ -821,6 +839,7 @@ async def health_check():
 ```
 
 **Health Check Strategy:**
+
 - Launcher scripts poll `/health` endpoint
 - 1 second intervals
 - 30 second timeout
@@ -830,6 +849,7 @@ async def health_check():
 ### 4.5 Process Management
 
 **Startup Flow:**
+
 1. User double-clicks desktop icon
 2. Launcher checks if backend already running (port 8765)
 3. If running → just open browser/window
@@ -839,12 +859,14 @@ async def health_check():
 7. If timeout → show error message with log location
 
 **Shutdown Flow:**
+
 1. User closes UI window
 2. Backend continues running (allows reopen)
 3. To fully stop: Run stop script or kill process
 4. Clean termination of all child processes
 
 **Error Handling:**
+
 - Port already in use → detect and notify user
 - Backend fails to start → show error with log path
 - Backend crashes → system tray notification (Phase 2-3)
@@ -853,6 +875,7 @@ async def health_check():
 ### 4.6 Deployment Package Structure
 
 **Phase 1 (PWA):**
+
 ```
 MAAS_v1.0.zip
 ├── python/               # Embedded Python runtime (50-100 MB)
@@ -869,12 +892,14 @@ MAAS_v1.0.zip
 ```
 
 **Phase 2-3 (Electron):**
+
 ```
 MAAS-Setup.exe            # NSIS installer (100-150 MB)
 └── (Contains all files bundled inside installer)
 ```
 
 **Installation Script (install.bat):**
+
 ```batch
 @echo off
 REM Copy files to C:\MAAS\

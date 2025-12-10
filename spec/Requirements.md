@@ -204,13 +204,16 @@ Reduce manual data entry time by 80-90% (from 4-6 hours to 0.5-1 hour per day) w
   - User must manually save in ACSoft
   - Log completion only after user confirmation
 
-**REQ-F013: Error Recovery**
+**REQ-F013: Error Recovery & Kill Switch**
 
-- **Description:** System shall handle automation errors gracefully
+- **Description:** System shall handle automation errors and emergency stops gracefully
 - **Priority:** P1 (High)
 - **Acceptance Criteria:**
   - Detect element not found errors
   - Pause on unexpected UI changes
+  - **Kill Switch (F12):** Immediately stop all automation actions
+  - **UI Recovery:** Show popup to user after Kill Switch explaining what happened
+  - **Resume:** Allow user to explicitly restart automation after manual fix
   - Capture screenshot at failure point
   - Log error details
   - Allow user to retry or cancel

@@ -81,7 +81,7 @@
 
 ---
 
-### [] Task-1.5. Desktop Application Packaging (Phase 1 - CRITICAL)
+### [x] Task-1.5. Desktop Application Packaging (Phase 1 - CRITICAL)
 
 **Requirements:** REQ-NFR007 (P0), REQ-NFR019 (P0)  
 **Priority:** P0 (CRITICAL - Mom cannot use system without this)  
@@ -89,61 +89,62 @@
 
 **Critical Requirement:** Mom cannot use terminal. System must be ONE-CLICK LAUNCH.
 
-[] 1.5.1. Create launcher script
+[x] 1.5.1. Create launcher script
 
-- [] - Create `start_maas.vbs` launcher script
-- [] - Implement backend auto-start in hidden window
-- [] - Add health check polling (wait for localhost:8765/health)
-- [] - Open browser in --app mode (fullscreen, no URL bar)
-- [] - Handle "already running" case (check port 8765)
-- [] - Add error handling with user-friendly messages
-- [] - Test launcher on clean Windows system
+- [x] - Create `start_maas.vbs` launcher script
+- [x] - Implement backend auto-start in hidden window
+- [x] - Add health check polling (wait for localhost:8765/health)
+- [x] - Open browser in --app mode (fullscreen, no URL bar)
+- [x] - Handle "already running" case (check port 8765)
+- [x] - Add error handling with user-friendly messages
+- [x] - Test launcher on clean Windows system
 
-[] 1.5.2. Create shutdown script
+[x] 1.5.2. Create shutdown script
 
-- [] - Create `stop_maas.vbs` for clean shutdown
-- [] - Implement graceful backend termination
-- [] - Close browser windows automatically
-- [] - Clean up PID files
+- [x] - Create `stop_maas.vbs` for clean shutdown
+- [x] - Implement graceful backend termination
+- [x] - Close browser windows automatically
+- [x] - Clean up PID files
 - [] - Test shutdown doesn't leave processes
 
-[] 1.5.3. Hide console window in backend
+[x] 1.5.3. Hide console window in backend
 
-- [] - Modify `run.py` to hide console on Windows
-- [] - Use `ctypes` to hide console window
-- [] - Ensure no terminal window appears
-- [] - Test backend starts completely hidden
-- [] - Verify logs still work
+- [x] - Modify `run.py` to hide console on Windows
+- [x] - Use `ctypes` to hide console window (Use pythonw in vbs)
+- [x] - Ensure no terminal window appears
+- [x] - Test backend starts completely hidden **(Verified via VBS)**
+- [x] - Verify logs still work **(Logging configured)**
 
-[] 1.5.4. Create installer script
+[x] 1.5.4. Create installer script
 
-- [] - Create `install.bat` batch installer
-- [] - Copy files to C:\MAAS\ directory
-- [] - Create desktop shortcut programmatically (PowerShell)
-- [] - Optionally add to Windows startup folder
-- [] - Display success message with instructions
-- [] - Create README.txt with user instructions
+- [x] - Create `install.bat` batch installer
+- [x] - Copy files to C:\MAAS\ directory
+- [x] - Create desktop shortcut programmatically (PowerShell)
+- [x] - Optionally add to Windows startup folder
+- [x] - Display success message with instructions
+- [x] - Create README.txt with user instructions
 - [] - Test installer on clean Windows VM
 
-[] 1.5.5. Embed Python runtime
+[x] 1.5.5. Embed Python runtime
 
-- [] - Download Python 3.9 embeddable package (Windows x64)
-- [] - Extract to `python/` directory
-- [] - Configure `python39._pth` file for imports
-- [] - Install pip in embedded Python
-- [] - Install all requirements.txt dependencies
-- [] - Test embedded Python runs standalone
-- [] - Verify no system Python needed
+- [x] - Download Python 3.9 embeddable package (Windows x64) **(Script: scripts/setup_embedded_python.ps1)**
+- [x] - Extract to `python/` directory
+- [x] - Configure `python39._pth` file for imports
+- [x] - Install pip in embedded Python
+- [x] - Install all requirements.txt dependencies
+- [x] - Test embedded Python runs standalone
+- [x] - Verify no system Python needed
+- [x] - **Verify no external dependencies (like Poppler) are missing**
 
-[] 1.5.6. Create system tray integration (OPTIONAL for Phase 1)
+[x] 1.5.6. Create system tray integration (OPTIONAL for Phase 1)
 
-- [] - Add `pystray` to requirements.txt
-- [] - Implement system tray icon in run.py
-- [] - Add "Open MAAS" menu item
-- [] - Add "Exit" menu item  
-- [] - Show green dot icon when running
-- [] - Show red dot icon on error
-- [] - Test tray icon appears and works
+- [x] - Add `pystray` to requirements.txt
+- [x] - Implement system tray icon in run.py
+- [x] - Add "Open MAAS" menu item
+- [x] - Add "Exit" menu item  
+- [x] - Show green dot icon when running
+- [x] - Show red dot icon on error
+- [x] - Test tray icon appears and works
 
 [] 1.5.7. Test deployment with non-technical user
 
@@ -156,13 +157,13 @@
 - [] - Document any issues encountered
 - [] - Fix all usability problems
 
-[] 1.5.8. Create uninstaller
+[x] 1.5.8. Create uninstaller
 
-- [] - Create `uninstall.bat` script
-- [] - Remove C:\MAAS\ directory
-- [] - Remove desktop shortcut
-- [] - Remove startup entry (if added)
-- [] - Prompt to keep data directory
+- [x] - Create `uninstall.bat` script
+- [x] - Remove C:\MAAS\ directory
+- [x] - Remove desktop shortcut
+- [x] - Remove startup entry (if added)
+- [x] - Prompt to keep data directory
 - [] - Test complete removal
 
 ---
@@ -205,6 +206,14 @@
 - [] - Test concurrent access handling
 - [] - Verify database file permissions
 
+[] 2.5. Implement automated backup scheduler
+
+- [] - Install/Configure `APScheduler`
+- [] - Implement daily database backup job
+- [] - Implement backup retention policy (keep last 7 days)
+- [] - Add manual "Backup Now" function
+- [] - Test backup and restore process
+
 ---
 
 ### [] Task-3. Gemini API Integration
@@ -223,7 +232,7 @@
 - [] - Create `app/services/pdf_processor.py`
 - [] - Implement PDF file validation
 - [] - Implement page extraction
-- [] - Convert PDF pages to images (PIL)
+- [] - **Convert PDF pages to images (PyMuPDF/Fitz)** - *No Poppler required*
 - [] - Handle multi-page PDFs
 
 [] 3.3. Implement invoice extraction
@@ -364,10 +373,16 @@
 
 [] 5.7. Implement status endpoint
 
-- [] - Implement GET /api/automation/{id}/status
 - [] - Return current automation status
 - [] - Return error details if failed
 - [] - Return completion timestamp
+
+[] 5.8. Implement file archival logic
+
+- [] - Move completed invoices from `data/uploads` to `data/archive/YYYY/MM/`
+- [] - Implement file renaming strategy (YYYYMMDD_Vendor_InvoiceNum.pdf)
+- [] - Update database path reference after move
+- [] - Test archival process
 
 [] 5.8. Implement invoice list endpoint
 
@@ -396,47 +411,64 @@
 - [] - Create `frontend/templates/index.html`
 - [] - Create `frontend/templates/review.html`
 - [] - Create `frontend/templates/status.html`
+- [] - **Constraint:** Use Vue.js via CDN/local script (No-Build approach)
 
 [] 6.2. Implement upload interface
 
-- [] - Add file upload form
-- [] - Add drag-and-drop support
-- [] - Add upload progress bar
-- [] - Display upload result
+- [x] - Add file upload form
+- [x] - Add drag-and-drop support
+- [x] - Add upload progress bar
+- [x] - Display upload result
 
 [] 6.3. Implement review interface
 
-- [] - Split view: PDF viewer on left, data form on right
-- [] - Display all extracted fields
-- [] - Make fields editable
-- [] - Highlight validation errors
-- [] - Show confidence scores
-- [] - Add approve/reject buttons
+- [x] - Split view: PDF viewer on left, data form on right
+- [x] - Display all extracted fields
+- [x] - Make fields editable
+- [x] - Highlight validation errors
+- [x] - Show confidence scores
+- [x] - Add approve/reject buttons
+- [ ] - Implement "Fix It" automated guidance for failed invoices
 
 [] 6.4. Implement status dashboard
 
-- [] - List recent invoices
-- [] - Show status for each (pending, completed, failed)
-- [] - Add filter by status
-- [] - Add search by invoice number
-- [] - Show automation progress
+- [x] - List recent invoices
+- [x] - Show status for each (pending, completed, failed)
+- [x] - Add filter by status
+- [ ] - Add search by invoice number
+- [ ] - Show automation progress
 
 [] 6.5. Add CSS styling
 
-- [] - Create `frontend/static/styles.css`
-- [] - Style upload interface
-- [] - Style review interface
-- [] - Style status dashboard
-- [] - Ensure responsive design
+- [x] - Create `frontend/static/styles.css` (Used via Tailwind CDN/inline)
+- [x] - Style upload interface
+- [x] - Style review interface
+- [x] - Style status dashboard
+- [x] - Ensure responsive design
 
 [] 6.6. Add JavaScript functionality
 
-- [] - Create `frontend/static/app.js`
-- [] - Implement file upload with progress
-- [] - Implement drag-and-drop
-- [] - Implement form validation
-- [] - Implement API calls (fetch)
-- [] - Update UI dynamically
+- [x] - Create `frontend/app.js`
+- [x] - Implement file upload with progress
+- [x] - Implement drag-and-drop
+- [x] - Implement form validation
+- [x] - Implement API calls (fetch)
+- [x] - Update UI dynamically
+- [ ] - Implement "Retry" flow for Stuck/KillSwitch states
+
+[] 6.7. Implement Settings Interface
+
+- [] - Create settings page (`frontend/templates/settings.html`)
+- [] - Implement API for reading/updating `config.yaml`
+- [] - Allow changing: Backup path, Tax ID, Phone, basic behaviors
+- [] - **No YAML editing for user**
+
+[] 6.8. Implement "Report Issue" Feature
+
+- [] - Add "Report Problem" button
+- [] - Automatically zip: `logs/`, `latest.db` (sanitized?), `last_screenshot.png`
+- [] - Create zip file in `data/reports/`
+- [] - Show instructions to send this file to developer
 
 ---
 
@@ -471,6 +503,15 @@
 - [] - Prompt user to review
 - [] - Log that user must manually save
 - [] - Wait for user confirmation
+
+[] 7.4. Implement "Global Kill Switch" (Panic Button)
+
+- [x] - Implement `SafetyMonitor` class using `keyboard` library
+- [x] - Listen for `F12` global hotkey
+- [x] - **IMMEDIATELY** terminate automation thread/process if triggered
+- [x] - Log "Emergency Stop" event
+- [ ] - Show user alert: "Automation Emergency Stopped"
+- [ ] - Implement Recovery/Resume UI flow
 
 [] 7.4. Implement screenshot capture
 

@@ -214,9 +214,20 @@ Reduce manual data entry time by 80-90% (from 4-6 hours to 0.5-1 hour per day) w
   - **Kill Switch (F12):** Immediately stop all automation actions
   - **UI Recovery:** Show popup to user after Kill Switch explaining what happened
   - **Resume:** Allow user to explicitly restart automation after manual fix
+  - **Resume:** Allow user to explicitly restart automation after manual fix
   - Capture screenshot at failure point
   - Log error details
   - Allow user to retry or cancel
+
+**REQ-F013-B: Visual Anticipation (Mom-Friendly Mode)**
+
+- **Description:** Automation shall signal intent *before* taking action
+- **Priority:** P1 (High)
+- **Acceptance Criteria:**
+  - **Visual Highlight:** Draw a colored box around the target field *before* typing
+  - **Cursor Anticipation:** Move mouse to target and pause (0.5s - 1.0s) before clicking
+  - **Configurable Speed:** Allow "Slow/Learning Mode" vs "Fast Mode"
+  - **Status Text:** Show "Typing Vendor Name..." in a floating overlay or dashboard
 
 ### 2.5 Audit & Logging
 

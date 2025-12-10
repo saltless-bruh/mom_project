@@ -174,6 +174,10 @@ Database Storage → Ready for Automation
 - Automatic pause on errors
 - **No auto-save capability**
 - **Manual Resume:** Explicit user confirmation required to restart after stop
+- **Visual Feedback Strategy:**
+  - **Highlight:** Use `draw_outline()` to flash a box around the active control
+  - **Hover-Wait-Act:** Move mouse → Wait `config.delay` → Type → Wait
+  - **Allows Pre-emptive Kill:** Mom sees the mouse move to the wrong spot *before* data is ruined, giving time to hit F12.
 
 ### 2.4 PDF Preview & Human Review Interface
 

@@ -23,91 +23,29 @@ MANIFEST
 
 # Virtual Environment
 venv/
-ENV/
 env/
-.venv
-
-# Environment Variables
+ENV/
 .env
-.env.local
-.env.*.local
 
 # IDEs
-.vscode/
 .idea/
+.vscode/
 *.swp
 *.swo
-*~
-.DS_Store
 
-# Jupyter Notebook
-.ipynb_checkpoints
+# Project Data (Local only)
+data/
+!data/.gitkeep
+logs/
+*.log
+*.sqlite
+*.db
+
+# OS
+Thumbs.db
+Desktop.ini
 
 # Testing
 .pytest_cache/
 .coverage
 htmlcov/
-.tox/
-.hypothesis/
-
-# Database
-*.db
-*.db-journal
-*.sqlite
-*.sqlite3
-data/maas.db
-data/backups/*.db
-
-# Logs
-logs/
-*.log
-
-# Runtime Data
-data/uploads/
-data/processed/
-data/screenshots/
-data/backups/
-
-# Sensitive Data
-*.pdf
-# Keep sample/fixture PDFs for testing
-!tests/fixtures/*.pdf
-
-# OS
-Thumbs.db
-.DS_Store
-
-# Temporary Files
-tmp/
-temp/
-*.tmp
-
-# Documentation Build
-docs/_build/
-site/
-
-# MyPy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# PyCharm
-.idea/
-
-# VS Code
-.vscode/
-*.code-workspace
-
-# Project Specific
-config.local.yaml
-*.backup
-*.bak
-
-# Keep directory structure but ignore contents
-data/**
-!data/.gitkeep
-logs/**
-!logs/.gitkeep
-
-# Snyk Security Extension - AI Rules (auto-generated)
-.github/instructions/snyk_rules.instructions.md

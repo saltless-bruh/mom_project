@@ -1,138 +1,44 @@
-# Mom's Accounting Automation System (MAAS)
-# Main Configuration File
+# Mom's Accounting Automation System (MAAS) Configuration
 
-# Application Settings
 app:
   name: "MAAS"
   version: "1.0.0"
-  environment: "development"  # development, staging, production
+  environment: "production"
   debug: false
-  
-# Server Settings
+  log_level: "INFO"
+
 server:
   host: "127.0.0.1"
-  port: 8000
-  reload: false
+  port: 8765
   workers: 1
-  
-# Database Settings
-database:
-  path: "./data/maas.db"
-  wal_mode: true
-  timeout: 30
-  check_same_thread: false
-  
-# Gemini API Settings
+
 gemini:
-  model: "gemini-2.0-flash-exp"
-  timeout: 30
-  max_retries: 3
-  retry_delay: 2  # seconds
+  api_key_env: "GEMINI_API_KEY"
+  model: "gemini-2.0-flash"
   temperature: 0.1
-  top_p: 0.95
-  top_k: 40
-  
-# PDF Processing Settings
-pdf:
-  max_file_size_mb: 50
-  supported_formats: ["pdf"]
-  image_dpi: 300
-  image_format: "PNG"
-  
-# Validation Settings
-validation:
-  min_confidence_threshold: 0.85
-  max_discount_percent: 50
-  valid_tax_rates: [0, 5, 8, 10]
-  date_format: "%Y-%m-%d"
-  currency: "VND"
-  rounding_tolerance: 1  # VND
-  
-# ACSoft Automation Settings
+  max_output_tokens: 8192
+  timeout_seconds: 30
+  retry_attempts: 3
+
+database:
+  path: "data/maas.db"
+  backup_path: "data/backups/"
+  backup_retention_days: 7
+
+storage:
+  upload_path: "data/uploads/"
+  archive_path: "data/archive/"
+  reports_path: "data/reports/"
+  screenshots_path: "data/screenshots/"
+  allowed_extensions: [".pdf"]
+
 acsoft:
   window_title: "ACSoft"
-  connection_timeout: 30
-  action_delay: 0.5  # seconds between actions
-  screenshot_enabled: true
-  auto_save: false  # MUST ALWAYS BE FALSE
-  
-# File Storage Settings
-storage:
-  base_path: "./data"
-  invoices_path: "./data/invoices"
-  screenshots_path: "./data/screenshots"
-  backups_path: "./data/backups"
-  max_storage_days: 7  # Keep files for 7 years for compliance (2555 days)
-  
-# Logging Settings
-logging:
-  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
-  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-  date_format: "%Y-%m-%d %H:%M:%S"
-  file_path: "./logs/maas.log"
-  max_file_size_mb: 10
-  backup_count: 5
-  console_output: true
-  
-  # Component-specific log levels
-  components:
-    gemini: "INFO"
-    pdf_processor: "INFO"
-    validator: "INFO"
-    acsoft_automation: "DEBUG"
-    api: "INFO"
-    database: "WARNING"
-    
-# Performance Settings
-performance:
-  max_extraction_time: 5  # seconds per page
-  max_validation_time: 1  # seconds
-  max_automation_time: 30  # seconds
-  max_total_time: 120  # 2 minutes per invoice
-  
-# Security Settings
-security:
-  allowed_hosts: ["127.0.0.1", "localhost"]
-  cors_origins: ["http://127.0.0.1:8000", "http://localhost:8000"]
-  api_key_required: false
-  max_upload_size_mb: 50
-  
-# Audit Settings
-audit:
-  enabled: true
-  log_user_actions: true
-  log_system_events: true
-  log_errors: true
-  retention_days: 365
-  
-# Backup Settings
-backup:
-  enabled: true
-  schedule: "daily"  # daily, weekly, monthly
-  time: "07:00"  # 24-hour format
-  retention_days: 30
-  compress: true
-  include_pdfs: true
-  include_screenshots: true
-  include_database: true
-  
-# Monitoring Settings
-monitoring:
-  enabled: true
-  metrics_enabled: true
-  health_check_enabled: true
-  performance_tracking: true
-  
-# Feature Flags (for gradual rollout)
-features:
-  multi_format_support: false  # Enable in Phase 2
-  duplicate_detection: false  # Enable in Phase 2
-  batch_processing: false  # Future feature
-  email_integration: false  # Future feature
-  
-# Vendor Configuration (for Phase 2)
-vendors:
-  default:
-    extraction_rules: "standard"
-    validation_rules: "standard"
-    confidence_threshold: 0.85
+  executable_path: "C:\\Program Files\\ACSoft\\ACSoft.exe"
+  connection_timeout_seconds: 30
+  action_delay_ms: 500
+  screenshot_before_action: true
+  auto_save: false  # SAFETY: NEVER AUTO SAVE
+
+automation:
+  global_kill_switch_key: "f10"

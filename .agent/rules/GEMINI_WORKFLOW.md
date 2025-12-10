@@ -1,4 +1,8 @@
-# GitHub Workflow Guide for AI Agents
+---
+trigger: always_on
+---
+
+# Workflow Guide for AI Agents
 
 ## Mom's Accounting Automation System (MAAS)
 

@@ -38,7 +38,9 @@ acsoft:
   connection_timeout_seconds: 30
   action_delay_ms: 500
   screenshot_before_action: true
-  auto_save: false  # SAFETY: NEVER AUTO SAVE
+  auto_save: false # SAFETY: NEVER AUTO SAVE
 
 automation:
-  global_kill_switch_key: "f10"
+  global_kill_switch_key: "f12"
+  dry_run: true
+  visual_delay: 1.0 # Seconds to pause/highlight (Traffic Light feature)

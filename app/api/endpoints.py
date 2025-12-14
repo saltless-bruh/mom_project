@@ -4,12 +4,12 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Query
-from app.models.schemas import InvoiceResponse, InvoiceListResponse, ValidationResult, ProcessResponse
+from app.models.schemas import InvoiceResponse, InvoiceListResponse, ValidationResult, ProcessResponse, AutomationStatusResponse
 from app.models.database import db_manager
 from app.services.pdf_processor import pdf_processor
 from app.services.gemini_client import gemini_client
 from app.services.validator import validator
-# from app.services.automation import automation_service (Task 7)
+from app.services.automation import automation_service
 
 # Setup Logger
 logger = logging.getLogger("maas.api")
@@ -222,3 +222,23 @@ async def validate_invoice_endpoint(id: str):
         raise HTTPException(status_code=404, detail="Invoice not found")
         
     return await run_validation(id)
+
+# --- Automation Endpoints ---
+
+@router.get("/automation/status", response_model=AutomationStatusResponse)
+async def get_automation_status():
+    """Get current status of the automation service."""
+    return automation_service.get_status()
+
+@router.post("/automation/stop")
+async def stop_automation():
+    """Emergency stop (Kill Switch)."""
+    automation_service.abort()
+    return {"message": "Automation stop requested"}
+
+@router.post("/automation/resume")
+async def resume_automation():
+    """Clear emergency stop flag."""
+    automation_service.resume_from_error()
+    return {"message": "Automation error state cleared"}
+

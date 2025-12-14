@@ -63,3 +63,8 @@ class ProcessResponse(BaseModel):
     message: str
     invoice_id: str
     status: str
+
+class AutomationStatusResponse(BaseModel):
+    is_running: bool
+    emergency_stop_triggered: bool
+    current_action_description: Optional[str] = None

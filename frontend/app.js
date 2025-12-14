@@ -9,6 +9,14 @@ createApp({
         const fileInput = ref(null);
         const validationResult = ref(null);
 
+        // Safety UI State
+        const automationState = ref({
+            isEmergencyStopped: false,
+            currentAction: null,
+            isRunning: false
+        });
+
+
         const API_BASE = '/api';
 
         // Stats
@@ -98,6 +106,43 @@ createApp({
             if (e.target.files.length) uploadFile(e.target.files[0]);
         };
 
+        // --- Safety & Automation Methods ---
+        const checkAutomationStatus = async () => {
+            try {
+                // Poll backend for real-time status
+                // In a real implementation this endpoint matches app/api/endpoints.py
+                const response = await fetch(`${API_BASE}/automation/status`);
+                if (response.ok) {
+                    const data = await response.json();
+                    automationState.value.isEmergencyStopped = data.emergency_stop_triggered;
+                    automationState.value.isRunning = data.is_running;
+                    // Visual Anticipation: "Typing Vendor Name..."
+                    automationState.value.currentAction = data.current_action_description;
+                }
+            } catch (error) {
+                // Silent fail on polling to avoid console spam
+            }
+        };
+
+        const dismissEmergency = async () => {
+            try {
+                await fetch(`${API_BASE}/automation/resume`, { method: 'POST' });
+                automationState.value.isEmergencyStopped = false;
+            } catch (error) {
+                alert("Failed to resume automation.");
+            }
+        };
+
+        const cancelAutomation = async () => {
+            try {
+                await fetch(`${API_BASE}/automation/stop`, { method: 'POST' });
+                automationState.value.isEmergencyStopped = false;
+                automationState.value.currentAction = null;
+            } catch (error) {
+                alert("Failed to cancel.");
+            }
+        };
+
         const selectInvoice = (inv) => {
             selectedInvoice.value = inv;
             validationResult.value = null; // Reset validation view
@@ -127,7 +172,8 @@ createApp({
 
         onMounted(() => {
             fetchInvoices();
-            setInterval(fetchInvoices, 10000); // Poll every 10s
+            setInterval(fetchInvoices, 10000); // Poll list every 10s
+            setInterval(checkAutomationStatus, 500); // Poll safety status fast (0.5s)
         });
 
         return {
@@ -148,7 +194,10 @@ createApp({
             formatCurrency,
             processInvoice,
             validateInvoice,
-            validationResult
+            validationResult,
+            automationState,
+            dismissEmergency,
+            cancelAutomation
         };
     }
 }).mount('#app');

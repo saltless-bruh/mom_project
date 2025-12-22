@@ -21,6 +21,19 @@ So, we taught this system to act like a polite human, not a robot.
 **Why this helps you:**
 If you see the mouse move to the wrong place, you have time to stop it! You don't have to race the computer.
 
+**⚙️ Adjustable Speed Setting:**
+
+The 1-second pause is the **training mode** - designed to help you get comfortable with the automation.
+
+**As you build trust:**
+
+* **First 10 invoices:** System runs slower (1.0s pause) so you can watch and learn
+* **After you're comfortable:** You can change the setting to run faster (0.5s or even faster)
+* **You're in control:** Settings can be adjusted anytime based on your preference
+
+**How to adjust:**
+Go to Settings → Automation Speed → Choose your preferred speed (Slow/Normal/Fast)
+
 ---
 
 ## 2. The Blue "I'm Thinking" Box

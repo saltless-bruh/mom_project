@@ -243,10 +243,11 @@ Mom's Accounting Automation System (MAAS) is **~70% implemented** for Phase 1 MV
   - Move processed PDFs to archive folder
   - Organized by year/month
   
-- [x] `app/services/pdf_processor.py` - PDF to image conversion
-  - pdf2image integration
-  - Multi-page support
-  
+### 2.2 PDF Processing Service
+- **Status:** ✅ Completed
+- **File:** `app/services/pdf_processor.py`
+- **Description:** Uses `PyMuPDF (fitz)` to convert PDF pages to high-quality images for the Vision API.
+- **Notes:** High performance, no external dependency on poppler required.
 - [x] `app/services/config_client.py` - Configuration loader
 
 ---
@@ -304,13 +305,11 @@ Mom's Accounting Automation System (MAAS) is **~70% implemented** for Phase 1 MV
 
 ### Phase 1 Missing Features
 
-#### 1. ACSoft Integration Completion
-
-**Priority:** 🔴 Critical
-
-- [ ] Run `scripts/inspect_ui.py` on target machine with ACSoft open
-- [ ] Map control IDs to automation service
-- [ ] Implement real form filling logic
+#### 3.1 ACSoft Integration
+- **Status:** 🔄 Pivot to Excel Strategy
+- **File:** `app/services/automation.py`
+- **Description:** Using `pywinauto` to automate the "Import Excel" workflow instead of direct data entry.
+- **Notes:** Direct GUI entry was too brittle. New strategy generates .xls/.xlsx files for import.
 - [ ] Add screenshot capture before each action
 - [ ] Implement element verification
 - [ ] Test with real invoices end-to-end

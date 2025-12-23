@@ -27,9 +27,24 @@ class GeminiClient:
         self.invoice_schema = {
             "type": "object",
             "properties": {
-                "vendor_name": {"type": "string"},
-                "vendor_tax_id": {"type": "string"},
-                "vendor_address": {"type": "string"},
+                "seller_info": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string"},
+                        "tax_id": {"type": "string"},
+                        "address": {"type": "string"}
+                    },
+                    "required": ["name"]
+                },
+                "buyer_info": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string"},
+                        "tax_id": {"type": "string"},
+                        "address": {"type": "string"}
+                    },
+                    "required": ["name"]
+                },
                 "invoice_number": {"type": "string"},
                 "invoice_date": {"type": "string", "description": "Format YYYY-MM-DD"},
                 "total_amount": {"type": "number"},
@@ -51,7 +66,7 @@ class GeminiClient:
                     }
                 }
             },
-            "required": ["vendor_name", "invoice_number", "invoice_date", "total_amount", "items"]
+            "required": ["seller_info", "buyer_info", "invoice_number", "invoice_date", "total_amount", "items"]
         }
 
     def _get_model(self):
@@ -78,6 +93,7 @@ class GeminiClient:
         # Prepare content: specific prompt + images
         prompt = """
         Extract all data from this Vietnamese invoice into JSON. 
+        - Identify seller information (selling party) and buyer information (buying party).
         - Ensure 'invoice_date' is formatted YYYY-MM-DD.
         - Normalize numbers (remove thousands separators like dots or commas).
         - If 'symbol' or 'mau_so' is present, include it in invoice_number or notes.

@@ -111,7 +111,7 @@ Database Storage → Ready for Automation
 
 **Workflow Timeline:**
 
-```
+```bash
 0:00 - Mom uploads PDF → Preview shown instantly (NO API call)
 0:05 - Mom reviews PDF → "Looks good, extract this"
 0:06 - Mom clicks "Extract Data" → Gemini API called NOW
@@ -152,32 +152,28 @@ Database Storage → Ready for Automation
 
 ### 2.3 ACSoft Automation Service
 
-**Purpose:** Automate data entry into ACSoft GUI
+**Purpose:** Automate data entry into ACSoft GUI via Excel Import
 
-**Design Pattern:** Command Pattern
+**Design Pattern:** Strategy Pattern (Pivot from direct GUI manipulation)
 
-**Commands:**
+**Workflow:**
 
-- `ConnectCommand`: Establish connection to ACSoft
-- `NavigateCommand`: Navigate to data entry screen
-- `FillHeaderCommand`: Fill invoice header fields
-- `FillItemsCommand`: Fill line item grid
-- `ScreenshotCommand`: Capture audit screenshots
-- `VerifyCommand`: Read back and verify entries
+1. **Generate Bridge File:** Convert validated invoice data into ACSoft-compatible Excel format (`.xls` or `.xlsx`).
+2. **Launch Import:** Use `pywinauto` to navigate ACSoft menus: `Data Entry` -> `Import Assistant`.
+3. **Select File:** Automate file selection dialog to pick the generated bridge file.
+4. **Confirm:** Handle confirmation popups.
+
+**Advantages:**
+
+- **Atomic Operation:** Data is imported all-at-once, reducing risk of partial entry.
+- **Reviewable Artifact:** The generated Excel file serves as a final check and backup.
+- **Robustness:** Unaffected by UI lag or minor layout changes (as long as menu structure persists).
 
 **Safety Mechanisms:**
 
-- **Global Kill Switch (F12):** Immediately terminates automation thread
-- Screenshot before every action
-- Element existence verification
-- Action confirmation checks
-- Automatic pause on errors
-- **No auto-save capability**
-- **Manual Resume:** Explicit user confirmation required to restart after stop
-- **Visual Feedback Strategy:**
-  - **Highlight:** Use `draw_outline()` to flash a box around the active control
-  - **Hover-Wait-Act:** Move mouse → Wait `config.delay` → Type → Wait
-  - **Allows Pre-emptive Kill:** Mom sees the mouse move to the wrong spot *before* data is ruined, giving time to hit F12.
+- **Global Kill Switch (F12):** Immediately terminates automation thread.
+- **Visual Delay:** Brief pause before clicking "Import" to allow user intervention.
+- **Pre-flight Check:** Verify ACSoft is ready and no other modal is open.
 
 ### 2.4 PDF Preview & Human Review Interface
 
@@ -226,7 +222,7 @@ class PDFPreviewService:
 
 **UI Flow:**
 
-```
+```bash
 ┌─────────────────────────────────────────────────────────────┐
 │ MAAS - Invoice Upload                                       │
 ├─────────────────────────────────────────────────────────────┤
@@ -320,7 +316,7 @@ class ExtractionReviewService:
 
 **UI Flow:**
 
-```
+```bash
 After Mom clicks "Extract Data with AI":
 
 ┌──────────────────────────────────────────────────────────────┐
@@ -354,7 +350,7 @@ After Mom clicks "Extract Data with AI":
 
 **Edit Mode (When Mom Clicks "Edit Data"):**
 
-```
+```bash
 ┌─────────────────────────────────────────────────────────────┐
 │ MAAS - Edit Invoice Data               [X Close]           │
 ├─────────────────────────────────────────────────────────────┤
@@ -609,7 +605,7 @@ async def submit_invoice(invoice_id: str):
 
 **Component Flow:**
 
-```
+```bash
 Desktop Icon → start_maas.vbs → Python Backend (hidden) → Chrome --app mode
                                       ↓
                                 localhost:8765
@@ -642,7 +638,7 @@ Desktop Icon → start_maas.vbs → Python Backend (hidden) → Chrome --app mod
 
 **File Structure:**
 
-```
+```bash
 C:\MAAS\
 ├── python\                 # Embedded Python runtime
 │   ├── python.exe
@@ -710,7 +706,7 @@ uvicorn.run(app, host="127.0.0.1", port=8765, log_level="info")
 
 **Component Flow:**
 
-```
+```bash
 MAAS.exe → Electron Main Process → Python Backend (embedded)
                 ↓
           Electron Renderer → Vue.js Frontend
@@ -880,7 +876,7 @@ async def health_check():
 
 **Phase 1 (PWA):**
 
-```
+```bash
 MAAS_v1.0.zip
 ├── python/               # Embedded Python runtime (50-100 MB)
 ├── app/                  # Application code
@@ -897,7 +893,7 @@ MAAS_v1.0.zip
 
 **Phase 2-3 (Electron):**
 
-```
+```bash
 MAAS-Setup.exe            # NSIS installer (100-150 MB)
 └── (Contains all files bundled inside installer)
 ```

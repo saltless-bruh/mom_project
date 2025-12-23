@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS invoices (
     discount_total REAL DEFAULT 0,
     tax_total REAL NOT NULL,
     total_amount REAL NOT NULL,
+    invoice_type TEXT CHECK(invoice_type IN ('IN', 'OUT')) DEFAULT 'IN',
     notes TEXT,
     payment_terms TEXT,
     

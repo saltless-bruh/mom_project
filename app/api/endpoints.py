@@ -1,6 +1,7 @@
 import shutil
 import uuid
 import logging
+import hashlib
 from pathlib import Path
 from typing import List, Optional
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Query
@@ -26,7 +27,22 @@ async def upload_invoice(file: UploadFile = File(...)):
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed.")
     
-    # Generate ID and Path
+    # Calculate file hash for duplicate detection
+    content = await file.read()
+    pdf_hash = hashlib.sha256(content).hexdigest()
+    await file.seek(0)  # Reset file pointer for saving
+    
+    # Check for duplicates
+    existing = await db_manager.fetch_one(
+        "SELECT id FROM invoices WHERE pdf_hash = ?", 
+        (pdf_hash,)
+    )
+    if existing:
+        # Return the existing invoice details if it's a duplicate
+        invoice = await db_manager.fetch_one("SELECT * FROM invoices WHERE id = ?", (existing["id"],))
+        return InvoiceResponse.from_orm(invoice)
+
+    # Generate ID and save file
     invoice_id = str(uuid.uuid4())
     file_path = UPLOAD_DIR / f"{invoice_id}_{file.filename}"
     
@@ -36,8 +52,8 @@ async def upload_invoice(file: UploadFile = File(...)):
             
         # Create DB Record
         query = """
-            INSERT INTO invoices (id, invoice_number, invoice_date, vendor_name, total_amount, pdf_path, status, subtotal, tax_total)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO invoices (id, invoice_number, invoice_date, vendor_name, total_amount, pdf_path, status, subtotal, tax_total, pdf_hash)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         # Initial dummy data until extraction
         await db_manager.execute_query(query, (
@@ -49,7 +65,8 @@ async def upload_invoice(file: UploadFile = File(...)):
             str(file_path), 
             "uploaded",
             0.0,
-            0.0
+            0.0,
+            pdf_hash
         ))
         
         # Fetch back
@@ -112,6 +129,29 @@ async def background_extraction(invoice_id: str, pdf_path: str):
         # Ideally, we should validate it first, but let's save the raw extraction result 
         # (For MVP, we overwrite columns directly)
         
+        # Determine Invoice Type (IN/OUT)
+        # Gemini now returns 'seller_info' and 'buyer_info'
+        seller_info = data.get("seller_info", {})
+        buyer_info = data.get("buyer_info", {})
+        
+        seller_name = seller_info.get("name", "")
+        buyer_name = buyer_info.get("name", "")
+        
+        # Check if Mom's company (933) is the seller
+        mom_company_keywords = ["933", "CÔNG TY TNHH MỘT THÀNH VIÊN 933"]
+        is_selling = any(k in seller_name.upper() for k in mom_company_keywords)
+        
+        if is_selling:
+            invoice_type = "OUT"
+            # For selling invoices, the "Vendor" column stores the Customer name
+            vendor_name = buyer_name
+            tax_id = buyer_info.get("tax_id")
+        else:
+            invoice_type = "IN"
+            # For buying invoices, the "Vendor" column stores the Supplier name
+            vendor_name = seller_name
+            tax_id = seller_info.get("tax_id")
+
         update_query = """
             UPDATE invoices SET 
                 vendor_name = ?,
@@ -122,6 +162,7 @@ async def background_extraction(invoice_id: str, pdf_path: str):
                 tax_total = ?,
                 subtotal = ?,
                 currency = ?,
+                invoice_type = ?,
                 status = 'extracted',
                 extracted_at = CURRENT_TIMESTAMP,
                 gemini_cost_usd = ?,
@@ -138,14 +179,15 @@ async def background_extraction(invoice_id: str, pdf_path: str):
         meta = data.get("_metadata", {})
         
         await db_manager.execute_query(update_query, (
-            data.get("vendor_name"),
-            data.get("vendor_tax_id"),
+            vendor_name,
+            tax_id,
             data.get("invoice_number"),
             data.get("invoice_date"),
             total,
             tax,
             subtotal,
             data.get("currency", "VND"),
+            invoice_type,
             meta.get("estimated_cost_usd", 0),
             meta.get("processing_time_ms", 0),
             invoice_id

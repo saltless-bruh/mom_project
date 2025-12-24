@@ -172,22 +172,22 @@
 
 **Requirements:** TECHNICAL_SPECS.md Section 2.5, Requirements.md REQ-F016
 
-[] 2.1. Define database schema
+[x] 2.1. Define database schema
 
-- [] - Create `invoices` table schema
-- [] - Create `invoice_items` table schema
-- [] - Create `vendors` table schema
-- [] - Create `automation_logs` table schema
-- [] - Create `audit_events` table schema
-- [] - Define all indexes (see TECHNICAL_SPECS.md)
+- [x] - Create `invoices` table schema **(schema.sql)**
+- [x] - Create `invoice_items` table schema
+- [x] - Create `vendors` table schema
+- [x] - Create `automation_logs` table schema
+- [x] - Create `audit_events` table schema
+- [x] - Define all indexes (see TECHNICAL_SPECS.md)
 
-[] 2.2. Implement database initialization
+[x] 2.2. Implement database initialization
 
-- [] - Create `scripts/init_db.py`
-- [] - Implement table creation
-- [] - Implement index creation
-- [] - Enable WAL mode
-- [] - Set database file permissions (chmod 600)
+- [x] - Create `scripts/init_db.py` **(Done)**
+- [x] - Implement table creation
+- [x] - Implement index creation
+- [x] - Enable WAL mode
+- [x] - Set database file permissions (chmod 600)
 
 [] 2.3. Create database access layer
 
@@ -472,71 +472,45 @@
 
 ---
 
-### [] Task-7. PyWinAuto Automation Script
+### [] Task-7. ACSoft Excel Integration (The "Bridge" Strategy)
 
-**Requirements:** TECHNICAL_SPECS.md Section 2.3, Requirements.md REQ-F010 through REQ-F013
+**Requirements:** TECHNICAL_SPECS.md Section 2.3, Requirements.md REQ-F010, REQ-F011
 
-[] 7.1. Implement ACSoft connection
+[] 7.1. Excel Template Engineering
 
-- [] - Create `app/services/acsoft_automation.py`
-- [] - Detect ACSoft window by title
-- [] - Verify correct screen/form
-- [] - Handle connection timeout (30s)
-- [] - Log connection status
+- [] - **Reverse Engineer:** Create manual import files for Buying (IN) and Selling (OUT)
+- [] - **Validate:** Test manual import in ACSoft to confirm format
+- [] - **Document:** Map DB columns to Excel columns (A, B, C...) in `spec/excel_map.md`
 
-[] 7.2. Implement form field population
+[] 7.2. Implement Excel Generator
 
-- [] - Map invoice fields to ACSoft elements
-- [] - Fill vendor name field
-- [] - Fill invoice number field
-- [] - Fill invoice date field
-- [] - Fill payment terms field
-- [] - Fill line item descriptions
-- [] - Fill quantities and prices
-- [] - Apply discounts
-- [] - Apply tax rates
+- [] - Add `pandas` and `openpyxl`/`xlwt` to requirements
+- [] - Create `app/services/excel_bridge.py`
+- [] - Implement `generate_bridge_file(invoice_data, type)`
+- [] - Handle date formatting (DD/MM/YYYY)
+- [] - Save files to `data/bridge/`
 
-[] 7.3. Implement safety mechanisms
+[] 7.3. Simplify ACSoft Automation (Import Wizard Only)
 
-- [] - **NEVER implement auto-save**
-- [] - Pause after filling form
-- [] - Prompt user to review
-- [] - Log that user must manually save
-- [] - Wait for user confirmation
+- [] - Refactor `acsoft_automation.py`
+- [] - **Action:** Open ACSoft -> Data Entry -> Import
+- [] - **Action:** Handle File Picker Dialog (Input path to bridge file)
+- [] - **Action:** Handle "Success" or "Error" popups
+- [] - Verify data appears in grid
+- [] - **NO Manual Field Filling** (Deprecated)
 
-[] 7.4. Implement "Global Kill Switch" (Panic Button)
+[] 7.4. Implement Safety & Review
 
-- [x] - Implement `SafetyMonitor` class using `keyboard` library
-- [x] - Listen for `F12` global hotkey
-- [x] - **IMMEDIATELY** terminate automation thread/process if triggered
-- [x] - Log "Emergency Stop" event
-- [ ] - Show user alert: "Automation Emergency Stopped"
-- [ ] - Implement Recovery/Resume UI flow
+- [] - **Visual Delay:** Pause 3s before clicking "Import"
+- [x] - **Kill Switch:** F12 (Already implemented)
+- [] - **Pre-flight:** Check if ACSoft is free (no modals open)
 
-[] 7.4. Implement screenshot capture
+[] 7.5. Test Automation Script
 
-- [] - Take screenshot before each action
-- [] - Take screenshot at completion
-- [] - Take screenshot at errors
-- [] - Save screenshots to data/screenshots/
-- [] - Link screenshots to invoice record
-
-[] 7.5. Implement error handling
-
-- [] - Detect element not found errors
-- [] - Detect unexpected UI changes
-- [] - Pause on errors
-- [] - Log error details
-- [] - Allow user to retry or cancel
-
-[] 7.6. Test automation script
-
-- [] - Manual testing with ACSoft
-- [] - Test with 5-10 sample invoices
-- [] - Verify all fields filled correctly
-- [] - Verify screenshots captured
-- [] - Test error recovery
-- [] - **Verify no auto-save occurs**
+- [] - Generate sample Excel files
+- [] - Run automation in "Dry Run" mode
+- [] - Test with actual ACSoft instance (if available)
+- [] - Verify correct data mapping
 
 ---
 
@@ -769,12 +743,13 @@
 - [] - Test with all collected samples
 - [] - Measure accuracy for each format
 
-[] 11.3. Implement vendor-specific rules
+[] 11.3. Implement Vendor Mapping UI
 
-- [] - Create vendor configuration system
-- [] - Add format-specific extraction logic
-- [] - Implement vendor detection
-- [] - Test with all vendor formats
+- [] - Create `frontend/templates/vendors.html`
+- [] - UI to map "Extracted Seller Name" -> "ACSoft Vendor Code"
+- [] - Store mappings in `vendors` table
+- [] - Update Excel generation to use mapped Vendor Codes
+- [] - **Auto-learn:** Suggest mapping if name matches previously mapped vendor
 
 [] 11.4. Test multi-format support
 

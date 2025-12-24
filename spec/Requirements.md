@@ -171,27 +171,39 @@ Reduce manual data entry time by 80-90% (from 4-6 hours to 0.5-1 hour per day) w
 
 ### 2.4 ACSoft Automation
 
-**REQ-F010: ACSoft Connection**
+**REQ-F010: ACSoft Import Automation**
 
-- **Description:** System shall connect to running ACSoft instance
+- **Description:** System shall automate the ACSoft Excel import wizard
 - **Priority:** P0 (Critical)
 - **Acceptance Criteria:**
   - Detect ACSoft window
-  - Verify correct version/screen
-  - Handle connection failures
-  - Timeout after 30 seconds
+  - Navigate menu: `Data Entry` -> `Import Assistant`
+  - Select correct import module based on Invoice Type
+  - Handle file selection dialog to choose generated Excel file
+  - Handle confirmation and success/error popups
+  - **Safety:** Verify "Ready" state before acting
 
-**REQ-F011: Form Field Population**
+**REQ-F011: Excel Bridge Generation**
 
-- **Description:** System shall populate ACSoft form fields
+- **Description:** System shall generate ACSoft-compatible Excel import files
 - **Priority:** P0 (Critical)
 - **Acceptance Criteria:**
-  - Fill vendor information
-  - Fill invoice header
-  - Fill all line items
-  - Apply discounts and taxes
-  - Verify each entry
-  - Take screenshots for audit
+  - Generate correct format (`.xls` or `.xlsx`) matching ACSoft templates
+  - Handle distinct templates for Buying (IN) vs Selling (OUT) invoices
+  - Map extracted data to correct Excel columns
+  - Format dates and numbers according to ACSoft requirements (e.g., DD/MM/YYYY)
+  - Sanitize text fields to prevent import errors
+
+**REQ-F011-B: Invoice Type Classification**
+
+- **Description:** System shall classify invoices as Buying or Selling
+- **Priority:** P0 (Critical)
+- **Acceptance Criteria:**
+  - Standardize Company Name (e.g., "933")
+  - **Selling (OUT):** Seller is Host Company
+  - **Buying (IN):** Buyer is Host Company
+  - Store `invoice_type` (`IN` / `OUT`) in database
+  - Display type in UI for verification
 
 **REQ-F012: Safety Mechanisms**
 
@@ -224,10 +236,9 @@ Reduce manual data entry time by 80-90% (from 4-6 hours to 0.5-1 hour per day) w
 - **Description:** Automation shall signal intent *before* taking action
 - **Priority:** P1 (High)
 - **Acceptance Criteria:**
-  - **Visual Highlight:** Draw a colored box around the target field *before* typing
-  - **Cursor Anticipation:** Move mouse to target and pause (0.5s - 1.0s) before clicking
-  - **Configurable Speed:** Allow "Slow/Learning Mode" vs "Fast Mode"
-  - **Status Text:** Show "Typing Vendor Name..." in a floating overlay or dashboard
+  - **Visual Delay:** Display "Preparing to Import..." overlay for 3s
+  - **Confirm Action:** Optional "Click to Import" button for explicit control
+  - **Status Text:** Show "Opening Import Wizard..." -> "Selecting File..." status updates
 
 ### 2.5 Audit & Logging
 
@@ -615,14 +626,16 @@ Reduce manual data entry time by 80-90% (from 4-6 hours to 0.5-1 hour per day) w
 
 ```bash
 1. Mom uploads PDF invoice
-2. System extracts data (3-5 seconds)
+2. System extracts data (3-5 seconds) and classifies (Buying/Selling)
 3. Mom reviews extraction results
 4. Mom corrects any errors (if needed)
 5. Mom approves for automation
-6. System fills ACSoft form (20-30 seconds)
-7. Mom reviews in ACSoft
-8. Mom manually saves in ACSoft
-9. System logs completion
+6. System generates Excel Bridge file
+7. System triggers ACSoft Import Wizard (5-10 seconds)
+8. ACSoft imports data from Excel
+9. Mom reviews final data in ACSoft grid
+10. Mom manually saves in ACSoft
+11. System logs completion
 ```
 
 **Workflow 2: Low Confidence Invoice**
